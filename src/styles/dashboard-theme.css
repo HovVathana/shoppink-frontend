@@ -411,11 +411,11 @@ select.menubox-input::-ms-expand {
 }
 
 .menubox-sidebar-item {
-  @apply flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white transition-all duration-200 rounded-lg mx-2 my-1;
+  @apply flex items-center px-4 py-3 text-slate-400 hover:bg-blue-950/75 hover:text-white transition-all duration-200 rounded-lg mx-2 my-1;
 }
 
 .menubox-sidebar-item-active {
-  @apply bg-gradient-to-r from-slate-800 to-slate-700 text-white shadow-sm font-bold;
+  @apply bg-gradient-to-r from-blue-950/75 to-blue-950/75 text-white shadow-sm font-bold;
 }
 
 .menubox-header {

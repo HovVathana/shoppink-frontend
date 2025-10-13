@@ -39,7 +39,8 @@ interface DashboardStats {
   completedOrders: number;
   deliveringOrders: number;
   returnedOrders: number;
-  totalRevenue: number;
+  totalRevenue: number; // Excludes returned orders
+  totalRevenueWithReturns: number; // Includes returned orders
   totalRevenuePP: number;
   totalRevenueProvince: number;
   totalRevenueCompleted: number;
@@ -56,12 +57,12 @@ interface DashboardStats {
 interface DriverStats {
   id: string;
   name: string;
-  total: number;
+  total: number; // Total number of orders (all states)
   delivering: number;
   completed: number;
   returned: number;
-  delivery: number;
-  totalAmount: number;
+  delivery: number; // Total delivery fees from COMPLETED orders only
+  totalAmount: number; // Total order amount from COMPLETED orders only
 }
 
 interface DailyOrderData {
@@ -84,6 +85,7 @@ export default function DashboardPage() {
     deliveringOrders: 0,
     returnedOrders: 0,
     totalRevenue: 0,
+    totalRevenueWithReturns: 0,
     totalRevenuePP: 0,
     totalRevenueProvince: 0,
     totalRevenueCompleted: 0,
@@ -116,7 +118,8 @@ export default function DashboardPage() {
   const [topProducts, setTopProducts] = useState<any[]>([]);
 
   // Separate date filter for monthly sales report, top products, and status distribution
-  const [salesReportPeriod, setSalesReportPeriod] = useState("current_month");
+  const [salesReportPeriod, setSalesReportPeriod] = useState("current_day");
+  const [previousSalesReportPeriod, setPreviousSalesReportPeriod] = useState(null);
 
   const [loading, setLoading] = useState(true);
 
@@ -138,20 +141,18 @@ export default function DashboardPage() {
     let startDate: Date;
     let endDate: Date;
 
-    console.log("Current date for calculation:", now.toISOString());
-    console.log("Current month:", now.getMonth(), "Year:", now.getFullYear());
-
     switch (period) {
+      case "current_day":
+        // Use UTC methods to avoid timezone issues
+        const todayStr = now.toISOString().split('T')[0]; // Get YYYY-MM-DD format
+        startDate = new Date(todayStr + 'T00:00:00.000Z');
+        endDate = new Date(todayStr + 'T23:59:59.999Z');
+        break;
       case "current_month":
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
         // Get the last day of current month and set to end of day
         endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
         endDate.setHours(23, 59, 59, 999);
-        console.log("Current month range:", {
-          start: startDate.toISOString(),
-          end: endDate.toISOString(),
-          currentDate: now.toISOString(),
-        });
         break;
       case "last_month":
         startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -174,9 +175,10 @@ export default function DashboardPage() {
         endDate.setHours(23, 59, 59, 999);
         break;
       default:
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        endDate.setHours(23, 59, 59, 999);
+        // Default to current day if period is unrecognized
+        const defaultTodayStr = now.toISOString().split('T')[0];
+        startDate = new Date(defaultTodayStr + 'T00:00:00.000Z');
+        endDate = new Date(defaultTodayStr + 'T23:59:59.999Z');
     }
 
     return {
@@ -200,18 +202,13 @@ export default function DashboardPage() {
       try {
         const dateRange = getSalesReportDateRange(salesReportPeriod);
 
-        console.log("Sales Report Date Range:", {
-          period: salesReportPeriod,
-          from: dateRange.from,
-          to: dateRange.to,
-        });
 
-        // Check cache first
-        const cacheKey = `sales-report-${salesReportPeriod}`;
-        const cachedData = cache.get(cacheKey);
+        // Check cache first - include actual date range in cache key to ensure fresh data when dates change
+        const cacheKey = `sales-report-${salesReportPeriod}-${dateRange.from}-${dateRange.to}`;
+        const periodChanged = previousSalesReportPeriod === null || salesReportPeriod !== previousSalesReportPeriod;
+        const cachedData = !periodChanged ? cache.get(cacheKey) : null; // Skip cache if period changed
 
         if (cachedData) {
-          console.log("Using cached sales report data");
           setDailyOrdersData(cachedData.dailyData);
           setTopProducts(cachedData.topProducts);
           setStatusDistribution(cachedData.statusData);
@@ -230,15 +227,6 @@ export default function DashboardPage() {
           ? response.data.orders
           : [];
 
-        console.log("Orders found:", orders.length);
-        console.log(
-          "Sample order dates:",
-          orders.slice(0, 3).map((o) => ({
-            id: o.id,
-            orderAt: o.orderAt,
-            date: new Date(o.orderAt).toLocaleDateString(),
-          }))
-        );
 
         // Calculate daily orders data for chart
         const dailyOrdersMap = new Map();
@@ -333,24 +321,28 @@ export default function DashboardPage() {
           },
         ].filter((item) => item.value > 0);
 
-        // Cache the results
+        // Cache the results - shorter cache time for current day data
         const cacheData = {
           dailyData: dailyData,
           topProducts: topProductsData,
           statusData: statusData,
         };
-        cache.set(cacheKey, cacheData, 5); // 5 minutes cache
+        const cacheMinutes = salesReportPeriod === 'current_day' ? 1 : 5; // 1 minute for current day, 5 for others
+        cache.set(cacheKey, cacheData, cacheMinutes);
 
         setDailyOrdersData(dailyData);
         setTopProducts(topProductsData);
         setStatusDistribution(statusData);
+        
+        // Update previous period to track changes
+        setPreviousSalesReportPeriod(salesReportPeriod);
       } catch (error) {
         console.error("Error fetching sales report data:", error);
       } finally {
         setIsLoadingSalesData(false);
       }
     }, 500); // 500ms debounce
-  }, [salesReportPeriod, isLoadingSalesData]);
+  }, [salesReportPeriod, previousSalesReportPeriod, isLoadingSalesData]);
 
   // Simple wrapper for backward compatibility
   const fetchSalesReportData = () => {
@@ -385,8 +377,18 @@ export default function DashboardPage() {
       const cachedData = cache.get(cacheKey);
 
       if (cachedData) {
-        console.log("Using cached dashboard data");
         setStats(cachedData.stats);
+        setDriverStats(cachedData.driverStats || []);
+        setUnassignedStats(cachedData.unassignedStats || {
+          id: "unassigned",
+          name: "Unassigned",
+          total: 0,
+          delivering: 0,
+          completed: 0,
+          returned: 0,
+          delivery: 0,
+          totalAmount: 0,
+        });
         setLoading(false);
         return;
       }
@@ -402,8 +404,6 @@ export default function DashboardPage() {
         driversAPI.getAllActive(), // Get all active drivers without pagination
       ]);
 
-      console.log("Orders response:", ordersResponse);
-      console.log("Drivers response:", driversResponse);
 
       const orders = Array.isArray(ordersResponse.data.orders)
         ? ordersResponse.data.orders
@@ -412,15 +412,10 @@ export default function DashboardPage() {
         ? driversResponse.data.drivers
         : [];
 
-      console.log("Orders array:", orders);
-      console.log("Drivers array:", drivers);
 
       // Orders are already filtered by date range on the backend
       const filteredOrders = orders;
 
-      console.log("Date range:", dateFrom, "to", dateTo);
-      console.log("Total orders:", orders.length);
-      console.log("Filtered orders:", filteredOrders.length);
 
       // Calculate main statistics
       const totalOrders = filteredOrders.length;
@@ -438,17 +433,21 @@ export default function DashboardPage() {
       ).length;
 
       // Calculate revenue statistics
-      // Total revenue (PP) - sum of total price of orders in Phnom Penh
+      // Total revenue with returns - sum of total price of ALL orders (including returned)
+      const totalRevenueWithReturns = filteredOrders
+        .reduce((sum: number, order: any) => sum + (order.totalPrice || 0), 0);
+
+      // Total revenue (PP) - sum of total price of orders in Phnom Penh (excluding returned)
       const totalRevenuePP = filteredOrders
-        .filter((o: any) => o.province === "Phnom Penh")
+        .filter((o: any) => o.province === "Phnom Penh" && o.state !== "RETURNED")
         .reduce((sum: number, order: any) => sum + (order.totalPrice || 0), 0);
 
-      // Total revenue (Province) - sum of total price of orders in Province (not Phnom Penh)
+      // Total revenue (Province) - sum of total price of orders in Province (excluding returned)
       const totalRevenueProvince = filteredOrders
-        .filter((o: any) => o.province !== "Phnom Penh")
+        .filter((o: any) => o.province !== "Phnom Penh" && o.state !== "RETURNED")
         .reduce((sum: number, order: any) => sum + (order.totalPrice || 0), 0);
 
-      // Total revenue - sum of total price of orders in both Phnom Penh and Province
+      // Total revenue - sum of total price of orders excluding returned orders
       const totalRevenue = totalRevenuePP + totalRevenueProvince;
 
       // Get completed orders only
@@ -509,6 +508,7 @@ export default function DashboardPage() {
         deliveringOrders,
         returnedOrders,
         totalRevenue,
+        totalRevenueWithReturns,
         totalRevenuePP,
         totalRevenueProvince,
         totalRevenueCompleted,
@@ -550,8 +550,12 @@ export default function DashboardPage() {
         if (order.driverId && driverStatsMap.has(order.driverId)) {
           const driverStat = driverStatsMap.get(order.driverId);
           driverStat.total++;
-          driverStat.totalAmount += order.totalPrice || 0;
-          driverStat.delivery += order.deliveryPrice || 0;
+          
+          // Only count delivery fee and total amount for COMPLETED orders
+          if (order.state === "COMPLETED") {
+            driverStat.totalAmount += order.totalPrice || 0;
+            driverStat.delivery += order.deliveryPrice || 0;
+          }
 
           if (order.state === "DELIVERING") driverStat.delivering++;
           if (order.state === "COMPLETED") driverStat.completed++;
@@ -559,8 +563,12 @@ export default function DashboardPage() {
         } else {
           // Unassigned orders
           unassignedCount++;
-          unassignedTotal += order.totalPrice || 0;
-          unassignedDelivery += order.deliveryPrice || 0;
+          
+          // Only count delivery fee and total amount for COMPLETED unassigned orders
+          if (order.state === "COMPLETED") {
+            unassignedTotal += order.totalPrice || 0;
+            unassignedDelivery += order.deliveryPrice || 0;
+          }
 
           if (order.state === "DELIVERING") unassignedDelivering++;
           if (order.state === "COMPLETED") unassignedCompleted++;
@@ -639,6 +647,7 @@ export default function DashboardPage() {
           deliveringOrders,
           returnedOrders,
           totalRevenue,
+          totalRevenueWithReturns,
           totalRevenuePP,
           totalRevenueProvince,
           totalRevenueCompleted,
@@ -650,6 +659,17 @@ export default function DashboardPage() {
           customerDeliveryCompleted,
           companyDeliveryCompleted,
           profitDeliveryCompleted,
+        },
+        driverStats: Array.from(driverStatsMap.values()),
+        unassignedStats: {
+          id: "unassigned",
+          name: "Unassigned",
+          total: unassignedCount,
+          delivering: unassignedDelivering,
+          completed: unassignedCompleted,
+          returned: unassignedReturned,
+          delivery: unassignedDelivery,
+          totalAmount: unassignedTotal,
         },
       };
       cache.set(cacheKey, dashboardCacheData, 3); // 3 minutes cache for dashboard
@@ -753,13 +773,13 @@ export default function DashboardPage() {
           variant="danger"
         />
         <StatCard
-          title="Delivery Fee"
+          title="Delivery Fee (Completed)"
           value={formatCurrency(driver.delivery)}
           icon={DollarSign}
           variant="success"
         />
         <StatCard
-          title="Total Amount"
+          title="Total Amount (Completed)"
           value={formatCurrency(driver.totalAmount)}
           icon={TrendingUp}
           variant="primary"
@@ -792,10 +812,6 @@ export default function DashboardPage() {
                 onClick={async () => {
                   // Clear all cache to force fresh data fetch
                   cache.clearAll();
-                  console.log("Refreshing dashboard with date range:", {
-                    dateFrom,
-                    dateTo,
-                  });
                   // Immediately refetch both dashboard and sales report data
                   await Promise.all([
                     fetchDashboardData(),
@@ -803,10 +819,6 @@ export default function DashboardPage() {
                       // For sales report, use the same dateFrom and dateTo from the date range filter
                       setIsLoadingSalesData(true);
                       try {
-                        console.log(
-                          "Refreshing sales report with date range:",
-                          { dateFrom, dateTo }
-                        );
                         const response = await ordersAPI.getAll({
                           limit: 5000,
                           dateFrom: dateFrom,
@@ -1034,7 +1046,7 @@ export default function DashboardPage() {
                   </p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
                 <StatCard
                   title="Revenue (Phnom Penh)"
                   value={formatCurrency(stats.totalRevenuePP)}
@@ -1052,6 +1064,12 @@ export default function DashboardPage() {
                   value={formatCurrency(stats.totalRevenue)}
                   icon={TrendingUp}
                   variant="primary"
+                />
+                <StatCard
+                  title="Total Revenue with Returns"
+                  value={formatCurrency(stats.totalRevenueWithReturns)}
+                  icon={RotateCcw}
+                  variant="warning"
                 />
               </div>
             </div>
@@ -1178,7 +1196,7 @@ export default function DashboardPage() {
                     Driver Performance
                   </h2>
                   <p className="text-gray-600 text-sm">
-                    Individual driver statistics and metrics
+                    Individual driver statistics and metrics (delivery fees and amounts from completed orders only)
                   </p>
                 </div>
               </div>
@@ -1216,6 +1234,7 @@ export default function DashboardPage() {
                     onChange={(e) => setSalesReportPeriod(e.target.value)}
                     className="text-sm border border-gray-300 rounded-md px-3 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
+                    <option value="current_day">Current Day</option>
                     <option value="current_month">Current Month</option>
                     <option value="last_month">Last Month</option>
                     <option value="last_3_months">Last 3 Months</option>
@@ -1281,6 +1300,7 @@ export default function DashboardPage() {
                     onChange={(e) => setSalesReportPeriod(e.target.value)}
                     className="text-sm border border-gray-300 rounded-md px-3 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
+                    <option value="current_day">Current Day</option>
                     <option value="current_month">Current Month</option>
                     <option value="last_month">Last Month</option>
                     <option value="last_3_months">Last 3 Months</option>
@@ -1341,6 +1361,7 @@ export default function DashboardPage() {
                   onChange={(e) => setSalesReportPeriod(e.target.value)}
                   className="text-sm border border-gray-300 rounded-md px-3 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
+                  <option value="current_day">Current Day</option>
                   <option value="current_month">Current Month</option>
                   <option value="last_month">Last Month</option>
                   <option value="last_3_months">Last 3 Months</option>

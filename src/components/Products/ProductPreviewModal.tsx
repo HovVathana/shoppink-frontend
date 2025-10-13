@@ -132,7 +132,10 @@ export default function ProductPreviewModal({
   const { addItem, getItemQuantity } = useCart();
 
   // Helper function to calculate price with options, handling BASE price correctly
-  const calculatePriceWithOptions = (product: Product, selectedOptions: { [groupId: string]: string[] }) => {
+  const calculatePriceWithOptions = (
+    product: Product,
+    selectedOptions: { [groupId: string]: string[] }
+  ) => {
     let calculatedPrice = 0; // Start with 0, not product base price
     let hasBasePrice = false;
 
@@ -159,7 +162,8 @@ export default function ProductPreviewModal({
                 break;
               case "PERCENTAGE":
                 // PERCENTAGE is added as percentage of current calculated price
-                calculatedPrice += (calculatedPrice * (option.priceValue || 0)) / 100;
+                calculatedPrice +=
+                  (calculatedPrice * (option.priceValue || 0)) / 100;
                 break;
               case "FREE":
               default:
@@ -255,10 +259,10 @@ export default function ProductPreviewModal({
         });
         if (exact) {
           // Check if any of the variant's options have BASE price type
-          const hasBaseOption = exact.variantOptions?.some((vo: any) => 
-            vo.option?.priceType === "BASE"
+          const hasBaseOption = exact.variantOptions?.some(
+            (vo: any) => vo.option?.priceType === "BASE"
           );
-          
+
           if (hasBaseOption) {
             // If variant contains BASE price options, use priceAdjustment as final price
             totalPrice = exact.priceAdjustment || 0;
@@ -432,18 +436,18 @@ export default function ProductPreviewModal({
       `${selectedQuantity}x ${product.name} ${STRINGS[currentLang].addedToCart}`,
       {
         duration: 1500, // Much quicker - 1.5 seconds instead of default 4 seconds
-        position: 'top-center',
+        position: "top-center",
         style: {
-          background: 'linear-gradient(to right, #ec4899, #a855f7)',
-          color: '#ffffff',
-          fontWeight: '600',
-          border: '1px solid #f9a8d4',
-          borderRadius: '12px',
-          boxShadow: '0 10px 25px rgba(236, 72, 153, 0.3)',
+          background: "linear-gradient(to right, #ec4899, #a855f7)",
+          color: "#ffffff",
+          fontWeight: "600",
+          border: "1px solid #f9a8d4",
+          borderRadius: "12px",
+          boxShadow: "0 10px 25px rgba(236, 72, 153, 0.3)",
         },
         iconTheme: {
-          primary: '#ffffff',
-          secondary: '#ec4899',
+          primary: "#ffffff",
+          secondary: "#ec4899",
         },
       }
     );
@@ -783,7 +787,7 @@ export default function ProductPreviewModal({
               >
                 <ShoppingCart className="inline h-4 w-4 mr-2" />
                 {STRINGS[currentLang].add} {selectedQuantity}{" "}
-                {STRINGS[currentLang].toCart} - $$
+                {STRINGS[currentLang].toCart} - $
                 {(
                   (calculatedPrice || product.price || 0) * selectedQuantity
                 ).toFixed(2)}

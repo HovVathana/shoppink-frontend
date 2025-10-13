@@ -1639,7 +1639,7 @@ export default function OrderModal({
                       />
                     </div>
 
-                    {isAdmin && (
+                    {/* {isAdmin && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700">
                           Company Delivery Price (Auto-calculated)
@@ -1655,7 +1655,7 @@ export default function OrderModal({
                           Based on province and total weight
                         </p>
                       </div>
-                    )}
+                    )} */}
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
@@ -1669,9 +1669,7 @@ export default function OrderModal({
                         placeholder="Auto-calculated"
                       />
                       <p className="text-xs text-gray-500 mt-1">
-                        {isAdmin
-                          ? "Subtotal + Delivery Price + Company Delivery Price"
-                          : "Subtotal + Delivery Price"}
+                        Subtotal + Delivery Price
                       </p>
                     </div>
                   </div>

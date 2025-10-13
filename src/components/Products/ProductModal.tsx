@@ -554,20 +554,16 @@ export default function ProductModal({
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
-                        Banner Type
+                        Banner Shape
                       </label>
                       <select
                         {...register("bannerType")}
                         className="input-field mt-1"
                       >
-                        <option value="info">Info</option>
-                        <option value="success">Success</option>
-                        <option value="warning">Warning</option>
-                        <option value="error">Error</option>
-                        <option value="discount">Discount</option>
-                        <option value="new">New</option>
-                        <option value="sale">Sale</option>
-                        <option value="hot">Hot</option>
+                        <option value="circle">Circle</option>
+                        <option value="square">Square</option>
+                        <option value="rectangle">Rectangle</option>
+                        <option value="tilted">Tilted</option>
                       </select>
                     </div>
 
@@ -589,12 +585,6 @@ export default function ProductModal({
                       </select>
                     </div>
                   </div>
-
-                  <p className="text-xs text-gray-500 mt-2">
-                    Banner type determines the shape: Circle (sale, info),
-                    Rectangle (hot, success), Square (new, error), Tilted
-                    (discount, warning)
-                  </p>
                 </div>
 
                 {/* Discount Pricing Section */}

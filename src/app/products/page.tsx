@@ -129,8 +129,11 @@ const ProductCard = ({
     return `$${price.toFixed(2)}`;
   };
 
+  // console.log(product);
+
   const getBannerStyle = () => {
     if (!product.bannerText) return { className: "", shape: "" };
+
 
     const colorMap = {
       blue: "bg-blue-500 text-white",
@@ -143,14 +146,50 @@ const ProductCard = ({
     };
 
     const typeShapeMap = {
-      discount: "rounded-lg rotate-12", // Tilted rectangle
-      sale: "rounded-full", // Circle
-      new: "rounded-none", // Square
-      hot: "rounded-lg", // Rectangle
-      info: "rounded-full", // Circle
-      success: "rounded-lg", // Rectangle
-      warning: "rounded-lg rotate-12", // Tilted rectangle
-      error: "rounded-none", // Square
+      // New simplified types
+      circle: "rounded-full", // Circle
+      square: "rounded-none", // Square  
+      rectangle: "rounded-lg", // Rectangle
+      tilted: "rounded-lg rotate-12", // Tilted rectangle
+      // Backward compatibility for old types
+      sale: "rounded-full", // Circle (legacy)
+      info: "rounded-full", // Circle (legacy)
+      new: "rounded-none", // Square (legacy)
+      error: "rounded-none", // Square (legacy)
+      hot: "rounded-lg", // Rectangle (legacy)
+      success: "rounded-lg", // Rectangle (legacy)
+      discount: "rounded-lg rotate-12", // Tilted (legacy)
+      warning: "rounded-lg rotate-12", // Tilted (legacy)
+    };
+    
+    // Additional styling for better shape display
+    const getAdditionalClasses = (type: string) => {
+      switch(type) {
+        // New simplified types
+        case 'circle':
+        // Legacy circular types
+        case 'sale':
+        case 'info':
+          return 'min-w-[36px] min-h-[36px] flex items-center justify-center px-1'; // Force square dimensions for circles with small padding
+        // New simplified types
+        case 'square':
+        // Legacy square types
+        case 'new':
+        case 'error':
+          return 'min-w-[32px] min-h-[32px] flex items-center justify-center px-1'; // Square badges with small padding
+        // New simplified types
+        case 'tilted':
+        // Legacy tilted types
+        case 'discount':
+        case 'warning':
+          return 'px-3 py-2'; // More padding for tilted rectangles
+        // New simplified types + legacy rectangle types
+        case 'rectangle':
+        case 'hot':
+        case 'success':
+        default:
+          return 'px-3 py-2'; // Default rectangular padding with more space
+      }
     };
 
     const baseColor =
@@ -160,9 +199,11 @@ const ProductCard = ({
       typeShapeMap[product.bannerType as keyof typeof typeShapeMap] ||
       "rounded-full";
 
+
     return {
       className: baseColor,
       shape: shape,
+      additionalClasses: getAdditionalClasses(product.bannerType || ''),
     };
   };
 
@@ -173,7 +214,7 @@ const ProductCard = ({
 
     return (
       <div
-        className={`absolute top-2 left-2 px-2 py-1 text-xs font-bold z-10 shadow-lg ${bannerStyle.className} ${bannerStyle.shape}`}
+        className={`absolute top-2 left-2 text-xs font-bold z-10 shadow-lg ${bannerStyle.className} ${bannerStyle.shape} ${bannerStyle.additionalClasses}`}
       >
         {product.bannerText}
       </div>
@@ -272,9 +313,7 @@ const ProductCard = ({
           <p className="text-gray-600 text-xs mb-2 line-clamp-2">
             {product.description}
           </p>
-          <div className="mt-auto">
-            {renderPrice()}
-          </div>
+          <div className="mt-auto">{renderPrice()}</div>
         </div>
       </div>
     );
@@ -497,18 +536,18 @@ export default function ProductsPage() {
 
     toast.success(`${product.name} ${STRINGS[lang].addedToCart}`, {
       duration: 1500, // Much quicker - 1.5 seconds instead of default 4 seconds
-      position: 'top-center',
+      position: "top-center",
       style: {
-        background: 'linear-gradient(to right, #ec4899, #a855f7)',
-        color: '#ffffff',
-        fontWeight: '600',
-        border: '1px solid #f9a8d4',
-        borderRadius: '12px',
-        boxShadow: '0 10px 25px rgba(236, 72, 153, 0.3)',
+        background: "linear-gradient(to right, #ec4899, #a855f7)",
+        color: "#ffffff",
+        fontWeight: "600",
+        border: "1px solid #f9a8d4",
+        borderRadius: "12px",
+        boxShadow: "0 10px 25px rgba(236, 72, 153, 0.3)",
       },
       iconTheme: {
-        primary: '#ffffff',
-        secondary: '#ec4899',
+        primary: "#ffffff",
+        secondary: "#ec4899",
       },
     });
   };

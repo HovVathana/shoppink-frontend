@@ -85,6 +85,9 @@ export const authAPI = {
 
   updateProfile: (data: { name?: string; profilePicture?: string }) =>
     api.put("/auth/profile", data),
+
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>
+    api.put("/auth/change-password", data),
 };
 
 // Products API
