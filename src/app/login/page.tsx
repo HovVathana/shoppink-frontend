@@ -192,6 +192,13 @@ export default function LoginPage() {
                 "Sign In"
               )}
             </button>
+
+            <h1 className="text-gray-600 text-sm">
+              <span className="text-green-500">Note:</span> The email and
+              password displayed on this screen are for demo purposes only.{" "}
+              <br /> For account creation, please contact the admin to purchase
+              a subscription plan through offical page.
+            </h1>
           </form>
         </div>
       </div>
