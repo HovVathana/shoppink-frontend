@@ -124,6 +124,7 @@ export default function LoginPage() {
                     type="email"
                     autoComplete="email"
                     className="menubox-input pl-12 w-full"
+                    defaultValue="guest@gmail.com"
                     placeholder="Enter your email address"
                   />
                 </div>
@@ -152,6 +153,7 @@ export default function LoginPage() {
                     })}
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
+                    defaultValue="guest12345"
                     className="menubox-input pl-12 pr-12 w-full"
                     placeholder="Enter your password"
                   />
