@@ -177,8 +177,7 @@ export default function AssignOrdersPage() {
                 Assign Orders
               </h1>
               <p className="text-gray-600">
-                Bulk assign multiple orders to a driver. Orders will
-                automatically change to "DELIVERING" status.
+                Bulk assign multiple orders to a driver.
               </p>
             </div>
           </div>

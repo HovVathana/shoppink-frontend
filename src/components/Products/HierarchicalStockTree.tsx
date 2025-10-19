@@ -9,13 +9,19 @@ import {
   Package,
   RefreshCw,
   Trash2,
+  Upload,
+  X,
+  Image as ImageIcon,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import hierarchicalStockAPI from "../../services/hierarchicalStockAPI";
+import { productOptionsAPI } from "@/lib/api";
+import ImageCropModal from "../ImageCropModal";
 
 interface ProductOption {
   id: string;
   name: string;
+  imageUrl?: string;
   stock: number;
   sortOrder: number;
 }
@@ -23,6 +29,7 @@ interface ProductOption {
 interface ProductOptionGroup {
   id: string;
   name: string;
+  imageUrl?: string;
   level: number;
   parentGroupId?: string;
   options: ProductOption[];
@@ -43,6 +50,7 @@ interface HierarchicalStockTreeProps {
 interface TreeNode {
   id: string;
   name: string;
+  imageUrl?: string;
   type: "option-group" | "option" | "option-group";
   stock: number;
   level: number;
@@ -68,6 +76,14 @@ export default function HierarchicalStockTree({
   const [editingStock, setEditingStock] = useState<string | null>(null);
   const [stockValue, setStockValue] = useState<string>("");
   const [lastSyncedSignature, setLastSyncedSignature] = useState<string>("");
+  const [uploadingImage, setUploadingImage] = useState<string | null>(null);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [pendingImageUpload, setPendingImageUpload] = useState<{
+    nodeId: string;
+    nodeType: 'option' | 'option-group';
+    variantId?: string;
+  } | null>(null);
 
   // Load hierarchical stock data
   const loadHierarchicalData = async () => {
@@ -150,6 +166,194 @@ export default function HierarchicalStockTree({
   const cancelStockEdit = () => {
     setEditingStock(null);
     setStockValue("");
+  };
+
+  // Handle file selection for cropping
+  const handleFileSelection = (nodeId: string, nodeType: 'option' | 'option-group', file: File, clickedNode?: TreeNode) => {
+    const nodeData = findNodeById(nodeId);
+    console.log('File selected for upload:', {
+      nodeId,
+      nodeType,
+      fileName: file.name,
+      clickedNode: clickedNode,
+      nodeData: nodeData,
+      isCombination: isCombinationNode(nodeId),
+      clickedVariantId: clickedNode?.variantId,
+      foundVariantId: nodeData?.variantId,
+      realOptionId: nodeType === 'option' ? extractRealOptionId(nodeId) : null,
+      realGroupId: nodeType === 'option-group' ? extractRealGroupId(nodeId) : null
+    });
+    setSelectedImageFile(file);
+    setPendingImageUpload({ 
+      nodeId, 
+      nodeType,
+      variantId: clickedNode?.variantId // Store the clicked node's variant ID
+    });
+    setCropModalOpen(true);
+  };
+
+  // Handle cropped image upload
+  const handleCroppedImageUpload = async (croppedImageBlob: Blob) => {
+    if (!pendingImageUpload) {
+      console.log('No pending image upload');
+      return;
+    }
+    
+    const nodeData = findNodeById(pendingImageUpload.nodeId);
+    const isCombination = isCombinationNode(pendingImageUpload.nodeId);
+    const realOptionId = pendingImageUpload.nodeType === 'option' ? extractRealOptionId(pendingImageUpload.nodeId) : null;
+    const realGroupId = pendingImageUpload.nodeType === 'option-group' ? extractRealGroupId(pendingImageUpload.nodeId) : null;
+    
+    // Use the stored variant ID from the clicked node, not the found node
+    const targetVariantId = pendingImageUpload.variantId || nodeData?.variantId;
+    
+    console.log('Starting image upload for node:', {
+      nodeId: pendingImageUpload.nodeId,
+      nodeType: pendingImageUpload.nodeType,
+      nodeData: nodeData,
+      isCombination,
+      storedVariantId: pendingImageUpload.variantId,
+      foundVariantId: nodeData?.variantId,
+      targetVariantId: targetVariantId,
+      realOptionId,
+      realGroupId
+    });
+    
+    try {
+      setUploadingImage(pendingImageUpload.nodeId);
+      
+      const formData = new FormData();
+      formData.append('image', croppedImageBlob, 'cropped-image.jpg');
+      
+      if (isCombination) {
+        // For combination nodes, we need to find the variant and update its image
+        console.log('Upload - Combination node:', {
+          nodeId: pendingImageUpload.nodeId,
+          nodeData,
+          targetVariantId: targetVariantId
+        });
+        if (targetVariantId) {
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+          
+          // Get auth token for request
+          const Cookies = (await import('js-cookie')).default;
+          const token = Cookies.get('token');
+          const headers: HeadersInit = {};
+          if (token) {
+            headers.Authorization = `Bearer ${token}`;
+          }
+          
+          const response = await fetch(`${apiUrl}/product-options/variants/${targetVariantId}/image`, {
+            method: 'PUT',
+            headers,
+            body: formData
+          });
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+        } else {
+          throw new Error(`No variant ID found for combination node ${pendingImageUpload.nodeId}`);
+        }
+      } else if (pendingImageUpload.nodeType === 'option') {
+        console.log('Upload - Option node:', {
+          nodeId: pendingImageUpload.nodeId,
+          realOptionId
+        });
+        if (realOptionId) {
+          await productOptionsAPI.updateOptionImage(realOptionId, formData);
+        } else {
+          throw new Error(`Could not extract real option ID from ${pendingImageUpload.nodeId}`);
+        }
+      } else {
+        console.log('Upload - Group node:', {
+          nodeId: pendingImageUpload.nodeId,
+          realGroupId
+        });
+        if (realGroupId) {
+          await productOptionsAPI.updateOptionGroupImage(realGroupId, formData);
+        } else {
+          throw new Error(`Could not extract real group ID from ${pendingImageUpload.nodeId}`);
+        }
+      }
+      
+      toast.success('Image uploaded successfully');
+      await loadHierarchicalData();
+      onUpdate();
+    } catch (error) {
+      console.error('Image upload error:', error);
+      toast.error('Failed to upload image');
+    } finally {
+      setUploadingImage(null);
+      setPendingImageUpload(null);
+      setSelectedImageFile(null);
+    }
+  };
+
+  // Handle crop modal close
+  const handleCropModalClose = () => {
+    setCropModalOpen(false);
+    setSelectedImageFile(null);
+    setPendingImageUpload(null);
+  };
+
+  // Handle image removal
+  const handleImageRemove = async (nodeId: string, nodeType: 'option' | 'option-group', clickedNode?: TreeNode) => {
+    try {
+      setUploadingImage(nodeId);
+      
+      const formData = new FormData();
+      formData.append('removeImage', 'true'); // Send flag to remove image
+      
+      if (isCombinationNode(nodeId)) {
+        // For combination nodes, we need to find the variant and remove its image
+        const nodeData = findNodeById(nodeId);
+        const targetVariantId = clickedNode?.variantId || nodeData?.variantId;
+        console.log('Remove - Combination node:', {
+          nodeId,
+          nodeData,
+          clickedVariantId: clickedNode?.variantId,
+          foundVariantId: nodeData?.variantId,
+          targetVariantId: targetVariantId
+        });
+        if (targetVariantId) {
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+          
+          // Get auth token for request
+          const Cookies = (await import('js-cookie')).default;
+          const token = Cookies.get('token');
+          const headers: HeadersInit = {};
+          if (token) {
+            headers.Authorization = `Bearer ${token}`;
+          }
+          
+          const response = await fetch(`${apiUrl}/product-options/variants/${targetVariantId}/image`, {
+            method: 'PUT',
+            headers,
+            body: formData
+          });
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+        } else {
+          throw new Error(`No variant ID found for combination node ${nodeId}`);
+        }
+      } else if (nodeType === 'option') {
+        const realOptionId = extractRealOptionId(nodeId);
+        await productOptionsAPI.updateOptionImage(realOptionId, formData);
+      } else {
+        const realGroupId = extractRealGroupId(nodeId);
+        await productOptionsAPI.updateOptionGroupImage(realGroupId, formData);
+      }
+      
+      toast.success('Image removed successfully');
+      await loadHierarchicalData();
+      onUpdate();
+    } catch (error) {
+      console.error('Image remove error:', error);
+      toast.error('Failed to remove image');
+    } finally {
+      setUploadingImage(null);
+    }
   };
 
   // Load data on component mount and when productId changes
@@ -242,6 +446,7 @@ export default function HierarchicalStockTree({
             const childGroupNode: TreeNode = {
               id: `${option.id}_${childGroupWithOptions.id}`,
               name: childGroupWithOptions.name,
+              imageUrl: childGroupWithOptions.imageUrl,
               type: "option-group",
               stock: childGroupWithOptions.options.reduce(
                 (sum, opt) => sum + opt.stock,
@@ -251,6 +456,7 @@ export default function HierarchicalStockTree({
               children: childGroupWithOptions.options.map((childOption) => ({
                 id: childOption.id,
                 name: childOption.name,
+                imageUrl: childOption.imageUrl,
                 type: "option",
                 stock: childOption.stock,
                 level: group.level + 3,
@@ -265,17 +471,18 @@ export default function HierarchicalStockTree({
 
             optionChildren.push(childGroupNode);
 
-            // Create node for this option (now acting as a group)
-            children.push({
-              id: option.id,
-              name: option.name,
-              type: "option-group",
-              stock: childGroupNode.stock,
-              level: group.level + 1,
-              children: optionChildren,
-              parentId: group.id,
-              isExpanded: expandedNodes.has(option.id),
-            });
+              // Create node for this option (now acting as a group)
+              children.push({
+                id: option.id,
+                name: option.name,
+                imageUrl: option.imageUrl,
+                type: "option-group",
+                stock: childGroupNode.stock,
+                level: group.level + 1,
+                children: optionChildren,
+                parentId: group.id,
+                isExpanded: expandedNodes.has(option.id),
+              });
           });
         } else {
           // Regular child groups without special nesting
@@ -288,6 +495,7 @@ export default function HierarchicalStockTree({
             children.push({
               id: option.id,
               name: option.name,
+              imageUrl: option.imageUrl,
               type: "option",
               stock: option.stock,
               level: group.level + 1,
@@ -307,6 +515,7 @@ export default function HierarchicalStockTree({
           children.push({
             id: option.id,
             name: option.name,
+            imageUrl: option.imageUrl,
             type: "option",
             stock: option.stock,
             level: group.level + 1,
@@ -322,6 +531,7 @@ export default function HierarchicalStockTree({
       return {
         id: group.id,
         name: group.name,
+        imageUrl: group.imageUrl,
         type: "option-group",
         stock: totalStock,
         level: group.level,
@@ -341,6 +551,7 @@ export default function HierarchicalStockTree({
     return {
       id: backendNode.id,
       name: backendNode.name,
+      imageUrl: backendNode.imageUrl,
       type: backendNode.type,
       stock: backendNode.stock,
       level: backendNode.level,
@@ -373,10 +584,10 @@ export default function HierarchicalStockTree({
       <div key={node.id} className="select-none">
         {/* Node Row */}
         <div
-          className={`flex items-center py-2 px-3 hover:bg-gray-50 rounded-lg transition-colors ${
+          className={`flex items-center py-2 px-2 sm:px-3 hover:bg-gray-50 rounded-lg transition-colors ${
             node.type === "option-group" ? "font-medium" : "text-gray-700"
           }`}
-          style={{ paddingLeft: `${indent + 12}px` }}
+          style={{ paddingLeft: `${Math.max(indent, 4) + 8}px` }}
         >
           {/* Expand/Collapse Button */}
           {hasChildren && (
@@ -421,15 +632,93 @@ export default function HierarchicalStockTree({
           </div>
 
           {/* Node Name and Stock */}
-          <div className="flex-1 flex items-center justify-between">
+          <div className="flex-1 flex items-center justify-between min-w-0">
             <span
-              className={`${
+              className={`truncate mr-2 ${
                 node.type === "option-group" ? "font-semibold" : ""
               }`}
+              title={node.name}
             >
               {node.name}
             </span>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+              {/* Image Display/Upload */}
+              <div className="flex items-center space-x-2">
+                {node.imageUrl ? (
+                  <div className="relative group">
+                    <img
+                      src={node.imageUrl}
+                      alt={node.name}
+                      className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded-lg border-2 border-gray-300 hover:border-blue-400 transition-colors cursor-pointer shadow-sm"
+                      onClick={() => {
+                        // Show larger preview on click
+                        const modal = document.createElement('div');
+                        modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4';
+                        modal.innerHTML = `
+                          <div class="relative max-w-md w-full">
+                            <img src="${node.imageUrl}" alt="${node.name}" class="w-full rounded-lg shadow-2xl" />
+                            <button class="absolute top-2 right-2 bg-white text-gray-800 rounded-full w-8 h-8 flex items-center justify-center hover:bg-gray-100 transition-colors" onclick="this.closest('.fixed').remove()">
+                              ×
+                            </button>
+                            <div class="absolute bottom-2 left-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-sm">
+                              ${node.name}
+                            </div>
+                          </div>
+                        `;
+                        document.body.appendChild(modal);
+                        modal.onclick = (e) => {
+                          if (e.target === modal) modal.remove();
+                        };
+                      }}
+                      title="Click to preview"
+                    />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleImageRemove(node.id, node.type === 'option' ? 'option' : 'option-group', node);
+                      }}
+                      className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110 hover:bg-red-600 shadow-lg"
+                      title="Remove image"
+                      disabled={uploadingImage === node.id}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 hover:border-gray-400 transition-colors">
+                    <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                  </div>
+                )}
+                <label className={`cursor-pointer p-2 rounded-lg hover:bg-gray-100 transition-all duration-200 ${
+                  uploadingImage === node.id ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'
+                }`}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        console.log('Image upload clicked for node:', {
+                          id: node.id,
+                          name: node.name,
+                          type: node.type,
+                          variantId: node.variantId,
+                          level: node.level
+                        });
+                        handleFileSelection(node.id, node.type === 'option' ? 'option' : 'option-group', file, node);
+                      }
+                      // Clear the input so the same file can be selected again
+                      e.target.value = '';
+                    }}
+                    className="hidden"
+                    disabled={uploadingImage === node.id}
+                  />
+                  <Upload className={`w-4 h-4 text-gray-500 transition-all duration-200 ${
+                    uploadingImage === node.id ? 'animate-spin text-blue-500' : 'hover:text-blue-500'
+                  }`} />
+                </label>
+              </div>
+
               {/* Stock Display/Edit */}
               {editingStock === node.id ? (
                 <div className="flex items-center space-x-1">
@@ -437,7 +726,7 @@ export default function HierarchicalStockTree({
                     type="number"
                     value={stockValue}
                     onChange={(e) => setStockValue(e.target.value)}
-                    className="w-16 px-2 py-1 text-sm border rounded"
+                    className="w-12 sm:w-16 px-1 sm:px-2 py-1 text-xs sm:text-sm border rounded"
                     min="0"
                     autoFocus
                   />
@@ -445,14 +734,14 @@ export default function HierarchicalStockTree({
                     onClick={() =>
                       node.variantId && saveStockEdit(node.variantId)
                     }
-                    className="p-1 bg-green-500 text-white rounded hover:bg-green-600"
+                    className="p-1 bg-green-500 text-white rounded hover:bg-green-600 text-xs sm:text-sm"
                     title="Save"
                   >
                     ✓
                   </button>
                   <button
                     onClick={cancelStockEdit}
-                    className="p-1 bg-gray-500 text-white rounded hover:bg-gray-600"
+                    className="p-1 bg-gray-500 text-white rounded hover:bg-gray-600 text-xs sm:text-sm"
                     title="Cancel"
                   >
                     ✕
@@ -460,7 +749,7 @@ export default function HierarchicalStockTree({
                 </div>
               ) : (
                 <span
-                  className={`px-2 py-1 rounded-full text-sm font-medium cursor-pointer ${
+                  className={`px-1 sm:px-2 py-1 rounded-full text-xs sm:text-sm font-medium cursor-pointer ${
                     node.stock === 0
                       ? "bg-red-100 text-red-800"
                       : node.stock <= 10
@@ -494,7 +783,7 @@ export default function HierarchicalStockTree({
               )}
 
               {/* Action Buttons */}
-              <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex space-x-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={() => handleEditNode(node)}
                   className="p-1 hover:bg-gray-200 rounded transition-colors"
@@ -502,7 +791,7 @@ export default function HierarchicalStockTree({
                     node.type === "option-group" ? "Edit Group" : "Edit Option"
                   }
                 >
-                  <Edit2 className="h-3 w-3 text-gray-500" />
+                  <Edit2 className="h-3 w-3 sm:h-3 sm:w-3 text-gray-500" />
                 </button>
                 {node.type === "option-group" && (
                   <button
@@ -510,7 +799,7 @@ export default function HierarchicalStockTree({
                     className="p-1 hover:bg-gray-200 rounded transition-colors"
                     title="Add Child"
                   >
-                    <Plus className="h-3 w-3 text-gray-500" />
+                    <Plus className="h-3 w-3 sm:h-3 sm:w-3 text-gray-500" />
                   </button>
                 )}
                 <button
@@ -522,7 +811,7 @@ export default function HierarchicalStockTree({
                       : "Delete Option"
                   }
                 >
-                  <Trash2 className="h-3 w-3 text-red-500" />
+                  <Trash2 className="h-3 w-3 sm:h-3 sm:w-3 text-red-500" />
                 </button>
               </div>
             </div>
@@ -592,6 +881,30 @@ export default function HierarchicalStockTree({
     return parts[parts.length - 1];
   };
 
+  // Helper function to detect if a node represents a combination (variant) rather than a pure option/group
+  const isCombinationNode = (nodeId: string): boolean => {
+    // Find the node in the tree and check if it has a variantId
+    const node = findNodeById(nodeId);
+    return !!(node?.variantId);
+  };
+
+  // Helper function to find a node by ID in the tree
+  const findNodeById = (nodeId: string): TreeNode | null => {
+    const searchInNodes = (nodes: TreeNode[]): TreeNode | null => {
+      for (const node of nodes) {
+        if (node.id === nodeId) {
+          return node;
+        }
+        const found = searchInNodes(node.children);
+        if (found) {
+          return found;
+        }
+      }
+      return null;
+    };
+    return searchInNodes(tree);
+  };
+
   const handleDeleteNode = (node: TreeNode) => {
     if (node.type === "option-group" && onDeleteGroup) {
       // Extract real group ID from composite ID
@@ -605,6 +918,7 @@ export default function HierarchicalStockTree({
   };
 
   const tree = buildTree();
+  
 
   // UX hints for generation state
   const hasVariants = (hierarchicalData?.variants?.length || 0) > 0;
@@ -616,43 +930,43 @@ export default function HierarchicalStockTree({
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 space-y-3 sm:space-y-0">
+        <div className="flex-1">
           <h3 className="text-lg font-semibold text-gray-900">Stock Tree</h3>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 hidden sm:block">
             Hierarchical view of all product variants and their stock levels
           </p>
         </div>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center justify-between w-full sm:w-auto space-x-4">
+          {/* Total Stock - Mobile first */}
+          <div className="text-left sm:text-right order-2 sm:order-3">
+            <div className="text-xl sm:text-2xl font-bold text-green-600">
+              {hierarchicalData?.product?.totalStock || 0}
+            </div>
+            <div className="text-xs text-gray-500">Total Stock</div>
+          </div>
           {/* Action Buttons */}
-          <div className="flex space-x-2">
+          <div className="flex space-x-2 order-1 sm:order-2">
             <button
               onClick={loadHierarchicalData}
               disabled={loading}
-              className="flex items-center space-x-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+              className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 text-sm"
               title="Refresh stock data"
             >
               <RefreshCw
                 className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
               />
-              <span>Refresh</span>
+              <span className="hidden sm:inline">Refresh</span>
             </button>
             <button
               onClick={handleGenerateVariants}
               disabled={loading}
-              className="flex items-center space-x-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm"
               title="Auto-generate variants from options"
             >
               <Package className="h-4 w-4" />
-              <span>Generate Variants</span>
+              <span className="hidden sm:inline">Generate Variants</span>
             </button>
-          </div>
-          {/* Total Stock */}
-          <div className="text-right">
-            <div className="text-2xl font-bold text-green-600">
-              {hierarchicalData?.product?.totalStock || 0}
-            </div>
-            <div className="text-xs text-gray-500">Total Stock</div>
           </div>
         </div>
       </div>
@@ -718,6 +1032,15 @@ export default function HierarchicalStockTree({
           </div>
         </div>
       </div>
+      
+      {/* Image Crop Modal */}
+      <ImageCropModal
+        isOpen={cropModalOpen}
+        onClose={handleCropModalClose}
+        onCropComplete={handleCroppedImageUpload}
+        imageFile={selectedImageFile}
+        title="Crop Option Image"
+      />
     </div>
   );
 }

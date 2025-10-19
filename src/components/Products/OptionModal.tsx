@@ -10,6 +10,7 @@ interface ProductOption {
   id: string;
   name: string;
   description?: string;
+  imageUrl?: string;
   priceType: string;
   priceValue?: number;
   isDefault: boolean;
@@ -45,6 +46,8 @@ export default function OptionModal({
   onSaved,
 }: OptionModalProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
   const isEditing = !!option;
 
   const {
@@ -56,6 +59,26 @@ export default function OptionModal({
   } = useForm<OptionForm>();
 
   const priceType = watch("priceType");
+
+  // Handle image file selection
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Remove image
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview("");
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -70,6 +93,9 @@ export default function OptionModal({
           stock: option.stock,
           sortOrder: option.sortOrder,
         });
+        // Set existing image if available
+        setImagePreview(option.imageUrl || "");
+        setImageFile(null);
       } else {
         reset({
           name: "",
@@ -81,6 +107,8 @@ export default function OptionModal({
           stock: 0,
           sortOrder: 0,
         });
+        setImagePreview("");
+        setImageFile(null);
       }
     }
   }, [isOpen, option, reset]);
@@ -102,11 +130,27 @@ export default function OptionModal({
         delete cleanedData.priceValue;
       }
 
+      // Create FormData for file upload
+      const formData = new FormData();
+      
+      // Add all form fields
+      Object.keys(cleanedData).forEach((key) => {
+        const value = cleanedData[key as keyof typeof cleanedData];
+        if (value !== null && value !== undefined) {
+          formData.append(key, value.toString());
+        }
+      });
+
+      // Add image file if selected
+      if (imageFile) {
+        formData.append("image", imageFile);
+      }
+
       if (isEditing && option) {
-        await productOptionsAPI.updateOption(option.id, cleanedData);
+        await productOptionsAPI.updateOptionWithImage(option.id, formData);
         toast.success("Option updated successfully");
       } else {
-        await productOptionsAPI.createOption(groupId, cleanedData);
+        await productOptionsAPI.createOptionWithImage(groupId, formData);
         toast.success("Option created successfully");
       }
       onSaved();
@@ -189,6 +233,43 @@ export default function OptionModal({
                     {errors.description.message}
                   </p>
                 )}
+              </div>
+            </div>
+
+            {/* Image Upload */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Option Image (Optional)
+              </label>
+              <div className="space-y-3">
+                {/* Current/Preview Image */}
+                {imagePreview && (
+                  <div className="relative inline-block">
+                    <img
+                      src={imagePreview}
+                      alt="Option preview"
+                      className="w-24 h-24 object-cover rounded-lg border border-gray-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600"
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
+                
+                {/* File Input */}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+                <p className="text-xs text-gray-500">
+                  Upload an image for this option (e.g., color swatch, variant photo)
+                </p>
               </div>
             </div>
 

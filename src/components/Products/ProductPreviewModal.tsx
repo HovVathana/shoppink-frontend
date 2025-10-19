@@ -69,6 +69,7 @@ interface ProductOption {
   id: string;
   name: string;
   description?: string;
+  imageUrl?: string;
   priceType: string;
   priceValue?: number;
   isDefault: boolean;
@@ -81,10 +82,37 @@ interface ProductOptionGroup {
   id: string;
   name: string;
   description?: string;
+  imageUrl?: string;
   selectionType: string;
   isRequired: boolean;
   sortOrder: number;
+  parentGroupId?: string;
+  isParent?: boolean;
+  level?: number;
   options: ProductOption[];
+  parentGroup?: {
+    id: string;
+    name: string;
+    imageUrl?: string;
+  };
+  childGroups?: ProductOptionGroup[];
+}
+
+interface ProductVariant {
+  id: string;
+  name: string;
+  imageUrl?: string;
+  stock: number;
+  priceAdjustment: number;
+  isActive: boolean;
+  variantOptions: {
+    id: string;
+    optionId: string;
+    option: {
+      id: string;
+      name: string;
+    };
+  }[];
 }
 
 interface Product {
@@ -102,6 +130,7 @@ interface Product {
   isOnSale?: boolean;
   hasOptions?: boolean;
   optionGroups?: ProductOptionGroup[];
+  variants?: ProductVariant[];
   category: {
     id: string;
     name: string;
@@ -129,7 +158,101 @@ export default function ProductPreviewModal({
   }>({});
   const [calculatedPrice, setCalculatedPrice] = useState(0);
   const [variants, setVariants] = useState<any[]>([]);
+  const [hierarchicalData, setHierarchicalData] = useState<any>(null);
+  const [displayImage, setDisplayImage] = useState("");
   const { addItem, getItemQuantity } = useCart();
+
+  // Get the display image based on selected options using hierarchical tree data (same as stock tree)
+  const getDisplayImage = () => {
+    if (!product) {
+      return "";
+    }
+
+    // Use hierarchical tree data if available (same as stock tree)
+    if (hierarchicalData && hierarchicalData.tree) {
+      const selectedOptionIds = Object.values(selectedOptions).flat();
+      if (selectedOptionIds.length > 0) {
+        // Find the exact matching tree node based on selected options
+        const findExactMatch = (nodes: any[]): any => {
+          for (const node of nodes) {
+            // If this is a leaf node with a variantId
+            if (node.variantId && node.children.length === 0) {
+              // Check if this leaf node corresponds to our selected options
+              const variant = hierarchicalData.variants?.find((v: any) => v.id === node.variantId);
+              if (variant) {
+                const variantOptionIds = variant.variantOptions?.map((vo: any) => vo.optionId || vo.option?.id).sort();
+                const selectedSorted = [...selectedOptionIds].sort();
+                
+                if (variantOptionIds && 
+                    variantOptionIds.length === selectedSorted.length &&
+                    variantOptionIds.every((id: string) => selectedSorted.includes(id))) {
+                  // This is our exact match - return the node
+                  return node;
+                }
+              }
+            }
+            
+            // If this node has children, recursively search them
+            if (node.children && node.children.length > 0) {
+              const found = findExactMatch(node.children);
+              if (found) {
+                return found;
+              }
+            }
+          }
+          return null;
+        };
+        
+        const matchingNode = findExactMatch(hierarchicalData.tree);
+        if (matchingNode) {
+          // If the matching node has an image, use it
+          if (matchingNode.imageUrl) {
+            return matchingNode.imageUrl;
+          }
+          
+          // If the matching node has no image, look for parent option images as fallback
+          // Priority: higher level options first (Size before Color)
+          const findFallbackImage = (nodes: any[], level: number = 1): string | null => {
+            // First pass: look for images at current level
+            for (const node of nodes) {
+              if (selectedOptionIds.includes(node.id) && node.imageUrl && node.level === level) {
+                return node.imageUrl;
+              }
+            }
+            
+            // Second pass: recursively check children at current level
+            for (const node of nodes) {
+              if (node.children && node.children.length > 0) {
+                const childImage = findFallbackImage(node.children, level);
+                if (childImage) {
+                  return childImage;
+                }
+              }
+            }
+            
+            // If no image found at current level, try next level
+            if (level <= 3) { // Assuming max 3 levels (Size, Color, etc.)
+              return findFallbackImage(hierarchicalData.tree, level + 1);
+            }
+            
+            return null;
+          };
+          
+          // Look for fallback images starting from highest level (Size first, then Color)
+          const fallbackImage = findFallbackImage(hierarchicalData.tree, 2); // Start at level 2 (options)
+          if (fallbackImage) {
+            return fallbackImage;
+          }
+          
+          // Final fallback to product main image
+          return product.imageUrl || "";
+        }
+      }
+    }
+
+    // Fallback to product main image
+    return product.imageUrl || "";
+  };
 
   // Helper function to calculate price with options, handling BASE price correctly
   const calculatePriceWithOptions = (
@@ -211,26 +334,34 @@ export default function ProductPreviewModal({
     }
   }, [product]);
 
-  // Load variants for stock checking
+  // Load hierarchical data (same as stock tree)
   useEffect(() => {
-    const loadVariants = async () => {
+    const loadHierarchicalData = async () => {
       try {
         if (product?.id) {
           const res = await hierarchicalStockAPI.getHierarchicalStock(
             product.id
           );
+          setHierarchicalData(res);
           const v = res?.variants || res?.data?.variants || [];
           setVariants(Array.isArray(v) ? v : []);
         } else {
+          setHierarchicalData(null);
           setVariants([]);
         }
       } catch (err) {
-        console.warn("Failed to load variants for product", product?.id, err);
+        console.warn("Failed to load hierarchical data for product", product?.id, err);
+        setHierarchicalData(null);
         setVariants([]);
       }
     };
-    loadVariants();
+    loadHierarchicalData();
   }, [product?.id]);
+
+  // Update display image when hierarchical data or selected options change
+  useEffect(() => {
+    setDisplayImage(getDisplayImage());
+  }, [hierarchicalData, selectedOptions, product]);
 
   // Calculate price based on selected options (prefer variant pricing)
   useEffect(() => {
@@ -310,8 +441,41 @@ export default function ProductPreviewModal({
   if (!isOpen || !product) return null;
 
   const currentCartQuantity = getItemQuantity(product.id);
-  // Always allow selling - no stock limitations
-  const isOutOfStock = false;
+  
+  // Check if product is out of stock based on current selections
+  const getAvailableStock = () => {
+    if (!product.hasOptions || !variants.length) {
+      // For products without options, use product quantity
+      return product.quantity || 0;
+    }
+    
+    // For products with options, check selected variant stock
+    const selectedIdsAll: string[] = Object.values(selectedOptions || {}).flat();
+    if (selectedIdsAll.length === 0) {
+      // No options selected yet, return total available stock from all variants
+      return variants.reduce((sum: number, v: any) => sum + (v.stock || 0), 0);
+    }
+    
+    // Find exact matching variant
+    const desired = new Set(selectedIdsAll);
+    const exactVariant = variants.find((v: any) => {
+      const voSet = new Set(
+        (v.variantOptions || []).map(
+          (vo: any) => vo.optionId || vo.option?.id
+        )
+      );
+      if (voSet.size !== desired.size) return false;
+      for (const id of Array.from(desired)) {
+        if (!voSet.has(id)) return false;
+      }
+      return true;
+    });
+    
+    return exactVariant ? (exactVariant.stock || 0) : 0;
+  };
+  
+  const availableStock = getAvailableStock();
+  const isOutOfStock = availableStock <= 0;
 
   const handleQuantityChange = (newQuantity: number) => {
     if (newQuantity >= 1) {
@@ -376,6 +540,12 @@ export default function ProductPreviewModal({
   };
 
   const handleAddToCart = () => {
+    // Check if out of stock
+    if (isOutOfStock) {
+      toast.error(STRINGS[currentLang].outOfStock);
+      return;
+    }
+    
     // Validate required options
     if (!validateRequiredOptions()) {
       return;
@@ -425,7 +595,7 @@ export default function ProductPreviewModal({
       originalPrice: product.originalPrice
         ? Number(product.originalPrice)
         : undefined,
-      imageUrl: product.imageUrl,
+      imageUrl: displayImage || product.imageUrl, // Use the selected option image or fallback to product image
       weight: Number(product.weight || 0),
       maxQuantity: Number(product.quantity || 0),
       quantity: Number(selectedQuantity || 1),
@@ -495,11 +665,11 @@ export default function ProductPreviewModal({
           {/* Single column layout for compactness */}
           {/* Product Image - Smaller and centered */}
           <div className="relative mb-6">
-            <div className="aspect-[4/3] max-w-sm mx-auto rounded-xl overflow-hidden bg-gray-100 shadow-lg">
+            <div className="aspect-square max-w-sm mx-auto rounded-xl overflow-hidden bg-gray-100 shadow-lg">
               <img
-                src={product.imageUrl}
+                src={displayImage || product.imageUrl || "/placeholder-product.jpg"}
                 alt={product.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-all duration-300"
               />
 
               {/* Banners */}
@@ -778,19 +948,28 @@ export default function ProductPreviewModal({
                   handleAddToCart();
                   onClose(); // Close modal after adding to cart
                 }}
-                disabled={product.hasOptions && !hasRequiredOptionsSelected()}
+                disabled={isOutOfStock || (product.hasOptions && !hasRequiredOptionsSelected())}
                 className={`w-full py-3 px-6 rounded-xl font-medium text-base transition-all duration-200 transform hover:scale-105 shadow-lg ${
-                  product.hasOptions && !hasRequiredOptionsSelected()
+                  isOutOfStock || (product.hasOptions && !hasRequiredOptionsSelected())
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                     : "bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white"
                 }`}
               >
-                <ShoppingCart className="inline h-4 w-4 mr-2" />
-                {STRINGS[currentLang].add} {selectedQuantity}{" "}
-                {STRINGS[currentLang].toCart} - $
-                {(
-                  (calculatedPrice || product.price || 0) * selectedQuantity
-                ).toFixed(2)}
+                {isOutOfStock ? (
+                  <>
+                    <Package className="inline h-4 w-4 mr-2" />
+                    {STRINGS[currentLang].outOfStock}
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart className="inline h-4 w-4 mr-2" />
+                    {STRINGS[currentLang].add} {selectedQuantity}{" "}
+                    {STRINGS[currentLang].toCart} - $
+                    {(
+                      (calculatedPrice || product.price || 0) * selectedQuantity
+                    ).toFixed(2)}
+                  </>
+                )}
               </button>
 
               <button

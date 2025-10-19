@@ -60,6 +60,7 @@ interface ProductOption {
   id: string;
   name: string;
   description?: string;
+  imageUrl?: string;
   priceType: string;
   priceValue?: number;
   isDefault: boolean;
@@ -72,10 +73,28 @@ interface ProductOptionGroup {
   id: string;
   name: string;
   description?: string;
+  imageUrl?: string;
   selectionType: string;
   isRequired: boolean;
   sortOrder: number;
   options: ProductOption[];
+}
+
+interface ProductVariant {
+  id: string;
+  name: string;
+  imageUrl?: string;
+  stock: number;
+  priceAdjustment: number;
+  isActive: boolean;
+  variantOptions: {
+    id: string;
+    optionId: string;
+    option: {
+      id: string;
+      name: string;
+    };
+  }[];
 }
 
 interface Product {
@@ -93,6 +112,7 @@ interface Product {
   isOnSale?: boolean;
   hasOptions?: boolean;
   optionGroups?: ProductOptionGroup[];
+  variants?: ProductVariant[];
   category: {
     id: string;
     name: string;
@@ -134,7 +154,6 @@ const ProductCard = ({
   const getBannerStyle = () => {
     if (!product.bannerText) return { className: "", shape: "" };
 
-
     const colorMap = {
       blue: "bg-blue-500 text-white",
       green: "bg-green-500 text-white",
@@ -148,7 +167,7 @@ const ProductCard = ({
     const typeShapeMap = {
       // New simplified types
       circle: "rounded-full", // Circle
-      square: "rounded-none", // Square  
+      square: "rounded-none", // Square
       rectangle: "rounded-lg", // Rectangle
       tilted: "rounded-lg rotate-12", // Tilted rectangle
       // Backward compatibility for old types
@@ -161,34 +180,34 @@ const ProductCard = ({
       discount: "rounded-lg rotate-12", // Tilted (legacy)
       warning: "rounded-lg rotate-12", // Tilted (legacy)
     };
-    
+
     // Additional styling for better shape display
     const getAdditionalClasses = (type: string) => {
-      switch(type) {
+      switch (type) {
         // New simplified types
-        case 'circle':
+        case "circle":
         // Legacy circular types
-        case 'sale':
-        case 'info':
-          return 'min-w-[36px] min-h-[36px] flex items-center justify-center px-1'; // Force square dimensions for circles with small padding
+        case "sale":
+        case "info":
+          return "min-w-[36px] min-h-[36px] flex items-center justify-center px-1"; // Force square dimensions for circles with small padding
         // New simplified types
-        case 'square':
+        case "square":
         // Legacy square types
-        case 'new':
-        case 'error':
-          return 'min-w-[32px] min-h-[32px] flex items-center justify-center px-1'; // Square badges with small padding
+        case "new":
+        case "error":
+          return "min-w-[32px] min-h-[32px] flex items-center justify-center px-1"; // Square badges with small padding
         // New simplified types
-        case 'tilted':
+        case "tilted":
         // Legacy tilted types
-        case 'discount':
-        case 'warning':
-          return 'px-3 py-2'; // More padding for tilted rectangles
+        case "discount":
+        case "warning":
+          return "px-3 py-2"; // More padding for tilted rectangles
         // New simplified types + legacy rectangle types
-        case 'rectangle':
-        case 'hot':
-        case 'success':
+        case "rectangle":
+        case "hot":
+        case "success":
         default:
-          return 'px-3 py-2'; // Default rectangular padding with more space
+          return "px-3 py-2"; // Default rectangular padding with more space
       }
     };
 
@@ -199,11 +218,10 @@ const ProductCard = ({
       typeShapeMap[product.bannerType as keyof typeof typeShapeMap] ||
       "rounded-full";
 
-
     return {
       className: baseColor,
       shape: shape,
-      additionalClasses: getAdditionalClasses(product.bannerType || ''),
+      additionalClasses: getAdditionalClasses(product.bannerType || ""),
     };
   };
 

@@ -135,6 +135,36 @@ export const productOptionsAPI = {
   updateOptionGroup: (groupId: string, data: any) =>
     api.put(`/product-options/groups/${groupId}`, data),
 
+  // Option Groups with image upload
+  createOptionGroupWithImage: (productId: string, formData: FormData) =>
+    api.post(`/product-options/${productId}/groups`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }),
+
+  updateOptionGroupWithImage: (groupId: string, formData: FormData) =>
+    api.put(`/product-options/groups/${groupId}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }),
+
+  // Image-only update endpoints
+  updateOptionGroupImage: (groupId: string, formData: FormData) =>
+    api.put(`/product-options/groups/${groupId}/image`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }),
+
+  updateOptionImage: (optionId: string, formData: FormData) =>
+    api.put(`/product-options/options/${optionId}/image`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }),
+
   deleteOptionGroup: (groupId: string) =>
     api.delete(`/product-options/groups/${groupId}`),
 
@@ -144,6 +174,21 @@ export const productOptionsAPI = {
 
   updateOption: (optionId: string, data: any) =>
     api.put(`/product-options/options/${optionId}`, data),
+
+  // Options with image upload
+  createOptionWithImage: (groupId: string, formData: FormData) =>
+    api.post(`/product-options/groups/${groupId}/options`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }),
+
+  updateOptionWithImage: (optionId: string, formData: FormData) =>
+    api.put(`/product-options/options/${optionId}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }),
 
   deleteOption: (optionId: string) =>
     api.delete(`/product-options/options/${optionId}`),

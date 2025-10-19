@@ -12,6 +12,7 @@ interface ProductOption {
   id: string;
   name: string;
   description?: string;
+  imageUrl?: string;
   priceType: string;
   priceValue?: number;
   isDefault: boolean;
@@ -24,6 +25,7 @@ interface ProductOptionGroup {
   id: string;
   name: string;
   description?: string;
+  imageUrl?: string;
   selectionType: string;
   isRequired: boolean;
   sortOrder: number;

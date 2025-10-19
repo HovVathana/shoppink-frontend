@@ -134,6 +134,24 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [pathname]);
 
+  // Save and restore mobile navbar scroll position
+  useEffect(() => {
+    const navbarElement = document.querySelector('[data-mobile-navbar]');
+    if (navbarElement) {
+      // Restore scroll position after navigation
+      const savedScrollPosition = localStorage.getItem('mobile-navbar-scroll');
+      if (savedScrollPosition) {
+        navbarElement.scrollLeft = parseInt(savedScrollPosition, 10);
+      }
+    }
+  }, [pathname]);
+
+  const handleNavbarScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    // Save scroll position when user scrolls
+    const scrollLeft = e.currentTarget.scrollLeft;
+    localStorage.setItem('mobile-navbar-scroll', scrollLeft.toString());
+  };
+
   return (
     <div className="min-h-dvh bg-gray-50 flex flex-col">
       {/* Desktop sidebar */}
@@ -286,7 +304,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* Mobile Bottom Tab Bar */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-gradient-to-tr from-[#070B34] to-[#070B34] border-t border-gray-200 z-50 safe-area-inset-bottom shadow-lg">
-        <div className="overflow-x-auto scrollbar-hide">
+        <div 
+          className="overflow-x-auto scrollbar-hide" 
+          data-mobile-navbar
+          onScroll={handleNavbarScroll}
+        >
           <div className="flex justify-center px-2 py-2 min-w-max">
             {/* Profile Picture Button - First Item */}
             <button
@@ -347,6 +369,19 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 </Link>
               );
             })}
+
+            {/* Logout Button - Last Item */}
+            <button
+              onClick={logout}
+              className="flex flex-col items-center justify-center px-3 py-2 min-w-[70px] rounded-xl transition-all duration-200 text-red-400 hover:text-red-300 hover:bg-red-900/20"
+            >
+              <div className="p-1.5 rounded-xl mb-1 transition-all duration-200 bg-transparent">
+                <LogOut className="h-4 w-4 transition-colors duration-200 text-red-400" />
+              </div>
+              <span className="text-xs font-medium text-center leading-tight transition-colors duration-200 whitespace-nowrap text-red-400">
+                Logout
+              </span>
+            </button>
           </div>
         </div>
       </div>
