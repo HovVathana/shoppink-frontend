@@ -124,7 +124,7 @@ export default function LoginPage() {
                     type="email"
                     autoComplete="email"
                     className="menubox-input pl-12 w-full"
-                    defaultValue="guest@gmail.com"
+                    defaultValue=""
                     placeholder="Enter your email address"
                   />
                 </div>
@@ -153,7 +153,7 @@ export default function LoginPage() {
                     })}
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
-                    defaultValue="guest12345"
+                    defaultValue=""
                     className="menubox-input pl-12 pr-12 w-full"
                     placeholder="Enter your password"
                   />
@@ -192,13 +192,6 @@ export default function LoginPage() {
                 "Sign In"
               )}
             </button>
-
-            <h1 className="text-gray-600 text-sm">
-              <span className="text-green-500">Note:</span> The email and
-              password displayed on this screen are for demo purposes only.{" "}
-              <br /> For account creation, please contact the admin to purchase
-              a subscription plan through offical page.
-            </h1>
           </form>
         </div>
       </div>
