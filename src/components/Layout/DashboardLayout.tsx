@@ -85,20 +85,20 @@ const allNavigation = [
     shortName: "Status",
     permission: "edit_orders",
   },
-  // {
-  //   name: "Batch Search",
-  //   href: "/dashboard/batch-search",
-  //   icon: Search,
-  //   shortName: "Search",
-  //   permission: "view_orders",
-  // },
-  // {
-  //   name: "Blacklist Phones",
-  //   href: "/dashboard/blacklist-phones",
-  //   icon: ShieldAlert,
-  //   shortName: "Blacklist",
-  //   permission: "view_orders",
-  // },
+  {
+    name: "Batch Search",
+    href: "/dashboard/batch-search",
+    icon: Search,
+    shortName: "Search",
+    permission: "view_orders",
+  },
+  {
+    name: "Blacklist Phones",
+    href: "/dashboard/blacklist-phones",
+    icon: ShieldAlert,
+    shortName: "Blacklist",
+    permission: "view_orders",
+  },
   {
     name: "Drivers",
     href: "/dashboard/drivers",
@@ -136,10 +136,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // Save and restore mobile navbar scroll position
   useEffect(() => {
-    const navbarElement = document.querySelector('[data-mobile-navbar]');
+    const navbarElement = document.querySelector("[data-mobile-navbar]");
     if (navbarElement) {
       // Restore scroll position after navigation
-      const savedScrollPosition = localStorage.getItem('mobile-navbar-scroll');
+      const savedScrollPosition = localStorage.getItem("mobile-navbar-scroll");
       if (savedScrollPosition) {
         navbarElement.scrollLeft = parseInt(savedScrollPosition, 10);
       }
@@ -149,7 +149,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const handleNavbarScroll = (e: React.UIEvent<HTMLDivElement>) => {
     // Save scroll position when user scrolls
     const scrollLeft = e.currentTarget.scrollLeft;
-    localStorage.setItem('mobile-navbar-scroll', scrollLeft.toString());
+    localStorage.setItem("mobile-navbar-scroll", scrollLeft.toString());
   };
 
   return (
@@ -304,8 +304,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* Mobile Bottom Tab Bar */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-gradient-to-tr from-[#070B34] to-[#070B34] border-t border-gray-200 z-50 safe-area-inset-bottom shadow-lg">
-        <div 
-          className="overflow-x-auto scrollbar-hide" 
+        <div
+          className="overflow-x-auto scrollbar-hide"
           data-mobile-navbar
           onScroll={handleNavbarScroll}
         >
