@@ -254,8 +254,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <p className="text-sm font-semibold text-white">
                     {admin?.name}
                   </p>
-                  <p className="text-xs text-slate-400">{admin?.role}</p>
-                  {/* <p className="text-xs text-slate-400">{admin?.email}</p> */}
+                  {/* <p className="text-xs text-slate-400">{admin?.role}</p> */}
+                  <p className="text-xs text-slate-400">{admin?.email}</p>
                 </div>
               )}
             </button>
