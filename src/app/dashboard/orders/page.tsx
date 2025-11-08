@@ -113,6 +113,12 @@ const ORDER_STATES = [
     icon: CheckCircle,
     color: "text-green-600 bg-green-100",
   },
+  {
+    value: "CANCELLED",
+    label: "Cancelled",
+    icon: X,
+    color: "text-gray-600 bg-gray-100",
+  },
 ];
 
 export default function OrdersPage() {
@@ -339,14 +345,14 @@ export default function OrdersPage() {
   // Quick function: Find orders by status
   const findOrdersByStatus = () => {
     const status = prompt(
-      "Enter status (PLACED, DELIVERING, COMPLETED, RETURNED):"
+      "Enter status (PLACED, DELIVERING, COMPLETED, RETURNED, CANCELLED):"
     )?.toUpperCase();
     if (
       !status ||
-      !["PLACED", "DELIVERING", "COMPLETED", "RETURNED"].includes(status)
+      !["PLACED", "DELIVERING", "COMPLETED", "RETURNED", "CANCELLED"].includes(status)
     ) {
       toast.error(
-        "Invalid status. Use: PLACED, DELIVERING, COMPLETED, or RETURNED"
+        "Invalid status. Use: PLACED, DELIVERING, COMPLETED, RETURNED, or CANCELLED"
       );
       return;
     }

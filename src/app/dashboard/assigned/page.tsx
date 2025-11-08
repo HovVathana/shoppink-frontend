@@ -125,6 +125,12 @@ const ORDER_STATES = [
     color: "bg-red-100 text-red-800",
     icon: XCircle,
   },
+  {
+    value: "CANCELLED",
+    label: "Cancelled",
+    color: "bg-gray-100 text-gray-800",
+    icon: X,
+  },
 ];
 
 export default function AssignedOrdersPage() {

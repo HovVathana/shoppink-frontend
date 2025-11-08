@@ -18,6 +18,7 @@ import {
   TrendingUp,
   Calendar,
   BarChart3,
+  XCircle,
 } from "lucide-react";
 import {
   LineChart,
@@ -39,6 +40,7 @@ interface DashboardStats {
   completedOrders: number;
   deliveringOrders: number;
   returnedOrders: number;
+  cancelledOrders: number;
   totalRevenue: number; // Excludes returned orders
   totalRevenueWithReturns: number; // Includes returned orders
   totalRevenuePP: number;
@@ -84,6 +86,7 @@ export default function DashboardPage() {
     completedOrders: 0,
     deliveringOrders: 0,
     returnedOrders: 0,
+    cancelledOrders: 0,
     totalRevenue: 0,
     totalRevenueWithReturns: 0,
     totalRevenuePP: 0,
@@ -297,6 +300,9 @@ export default function DashboardPage() {
         const returnedOrders = orders.filter(
           (order: any) => order.state === "RETURNED"
         ).length;
+        const cancelledOrders = orders.filter(
+          (order: any) => order.state === "CANCELLED"
+        ).length;
 
         const statusData: StatusDistribution[] = [
           {
@@ -318,6 +324,11 @@ export default function DashboardPage() {
             name: "Returned",
             value: returnedOrders,
             color: "#EF4444", // red
+          },
+          {
+            name: "Cancelled",
+            value: cancelledOrders,
+            color: "#6B7280", // gray
           },
         ].filter((item) => item.value > 0);
 
@@ -431,6 +442,9 @@ export default function DashboardPage() {
       const returnedOrders = filteredOrders.filter(
         (o: any) => o.state === "RETURNED"
       ).length;
+      const cancelledOrders = filteredOrders.filter(
+        (o: any) => o.state === "CANCELLED"
+      ).length;
 
       // Calculate revenue statistics
       // Total revenue with returns - sum of total price of ALL orders (including returned)
@@ -507,6 +521,7 @@ export default function DashboardPage() {
         completedOrders,
         deliveringOrders,
         returnedOrders,
+        cancelledOrders,
         totalRevenue,
         totalRevenueWithReturns,
         totalRevenuePP,
@@ -634,6 +649,11 @@ export default function DashboardPage() {
           value: returnedOrders,
           color: "#EF4444", // red
         },
+        {
+          name: "Cancelled",
+          value: cancelledOrders,
+          color: "#6B7280", // gray
+        },
       ].filter((item) => item.value > 0);
 
       setStatusDistribution(statusData);
@@ -646,6 +666,7 @@ export default function DashboardPage() {
           completedOrders,
           deliveringOrders,
           returnedOrders,
+          cancelledOrders,
           totalRevenue,
           totalRevenueWithReturns,
           totalRevenuePP,
@@ -900,6 +921,9 @@ export default function DashboardPage() {
                         const returnedOrders = orders.filter(
                           (o: any) => o.state === "RETURNED"
                         ).length;
+                        const cancelledOrders = orders.filter(
+                          (o: any) => o.state === "CANCELLED"
+                        ).length;
                         const statusData: StatusDistribution[] = [
                           {
                             name: "Placed",
@@ -920,6 +944,11 @@ export default function DashboardPage() {
                             name: "Returned",
                             value: returnedOrders,
                             color: "#EF4444",
+                          },
+                          {
+                            name: "Cancelled",
+                            value: cancelledOrders,
+                            color: "#6B7280",
                           },
                         ].filter((item) => item.value > 0);
                         setStatusDistribution(statusData);
@@ -997,7 +1026,7 @@ export default function DashboardPage() {
                   </p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 lg:gap-6">
+              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 lg:gap-6">
                 <StatCard
                   title="Total Orders"
                   value={stats.totalOrders}
@@ -1027,6 +1056,12 @@ export default function DashboardPage() {
                   value={stats.returnedOrders}
                   icon={RotateCcw}
                   variant="danger"
+                />
+                <StatCard
+                  title="Cancelled Orders"
+                  value={stats.cancelledOrders}
+                  icon={XCircle}
+                  variant="default"
                 />
               </div>
             </div>
