@@ -23,6 +23,7 @@ export default function AssignOrdersPage() {
   const [useCurrentTime, setUseCurrentTime] = useState(true);
   const [assignmentDate, setAssignmentDate] = useState("");
   const [assignmentTime, setAssignmentTime] = useState("");
+  const [failedOrders, setFailedOrders] = useState<Array<{ id: string; error: string }>>([]);
 
   const { isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -96,7 +97,7 @@ export default function AssignOrdersPage() {
     setLoading(true);
     let successCount = 0;
     let errorCount = 0;
-    const errors: string[] = [];
+    const failedOrdersList: Array<{ id: string; error: string }> = [];
 
     // Prepare the assignment date
     let customAssignedAt: string | undefined = undefined;
@@ -120,7 +121,7 @@ export default function AssignOrdersPage() {
           const message =
             error.response?.data?.message ||
             `Failed to assign order ${orderId}`;
-          errors.push(`${orderId}: ${message}`);
+          failedOrdersList.push({ id: orderId, error: message });
         }
       }
 
@@ -131,10 +132,12 @@ export default function AssignOrdersPage() {
       }
 
       if (errorCount > 0) {
+        setFailedOrders(failedOrdersList);
         toast.error(
-          `Failed to assign ${errorCount} order(s). Check console for details.`
+          `Failed to assign ${errorCount} order(s). See error details below.`
         );
-        console.error("Assignment errors:", errors);
+      } else {
+        setFailedOrders([]);
       }
 
       // Clear the form if all assignments were successful
@@ -144,6 +147,10 @@ export default function AssignOrdersPage() {
         setUseCurrentTime(true);
         setAssignmentDate("");
         setAssignmentTime("");
+      } else {
+        // Keep only failed order IDs in the textarea for easy retry
+        const failedOrderIds = failedOrdersList.map(f => f.id).join("\n");
+        setOrderIds(failedOrderIds);
       }
     } catch (error) {
       console.error("Bulk assignment error:", error);
@@ -346,8 +353,53 @@ export default function AssignOrdersPage() {
             </div>
           </div>
 
+          {/* Failed Orders Display */}
+          {failedOrders.length > 0 && (
+            <div className="bg-red-50 border-2 border-red-300 rounded-lg p-6 mt-6">
+              <div className="flex items-center mb-4">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-3">
+                  <span className="text-red-600 font-bold text-lg">!</span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-red-800">
+                    Failed to Assign {failedOrders.length} Order(s)
+                  </h3>
+                  <p className="text-sm text-red-600">
+                    The following orders could not be assigned. Review errors and try again.
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {failedOrders.map((failedOrder, index) => (
+                  <div
+                    key={index}
+                    className="bg-white border border-red-200 rounded-lg p-4 hover:border-red-400 transition-colors"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-mono font-bold text-red-700 bg-red-100 px-2 py-1 rounded">
+                            {failedOrder.id}
+                          </span>
+                        </div>
+                        <p className="text-sm text-red-600">
+                          <span className="font-medium">Error:</span> {failedOrder.error}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 p-3 bg-red-100 rounded border border-red-200">
+                <p className="text-sm text-red-700">
+                  <span className="font-semibold">Tip:</span> The failed order IDs have been kept in the textarea above. Fix any issues and click "Assign Orders" again to retry.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Instructions */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
             <h3 className="text-sm font-medium text-blue-800 mb-2">
               Instructions:
             </h3>

@@ -31,6 +31,7 @@ const styles = StyleSheet.create({
     padding: 15,
     fontSize: 10,
     fontFamily: "Bayon",
+    fontWeight: "bold", // Make everything bold
   },
   englishFont: {
     fontFamily: "DMSans",
@@ -43,12 +44,15 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 12,
+    fontWeight: "bold",
   },
   subtitle: {
     fontSize: 8,
+    fontWeight: "bold",
   },
   bigText: {
     fontSize: 14,
+    fontWeight: "bold",
   },
   image: {
     width: 30,
@@ -60,9 +64,11 @@ const styles = StyleSheet.create({
   billTo: {
     marginTop: 5,
     marginBottom: 5,
+    fontWeight: "bold",
   },
   spaceY: {
     marginVertical: 3,
+    fontWeight: "bold",
   },
   end: {
     flexDirection: "column",
@@ -80,22 +86,26 @@ const styles = StyleSheet.create({
     borderBottomColor: "#000",
     borderBottomStyle: "solid",
     flexDirection: "row",
+    fontWeight: "bold",
   },
   tableRow: {
     flexDirection: "row",
     borderBottomWidth: 2,
     borderBottomColor: "#000",
     borderBottomStyle: "solid",
+    fontWeight: "bold",
   },
   td: {
     padding: 6,
     color: "#000",
     flex: 1,
     textAlign: "center",
+    fontWeight: "bold",
   },
   totals: {
     marginTop: 8,
     alignItems: "flex-end",
+    fontWeight: "bold",
   },
 });
 
@@ -212,7 +222,7 @@ const OrdersPDFDocument = ({
                 <Text style={styles.subtitle}>
                   បញ្ជាដោយ:{" "}
                   <Text style={styles.englishFont}>
-                    {order.creator?.name || "N/A"} ({order.creator?.role || ""})
+                    {order.creator?.name || "N/A"}
                   </Text>
                 </Text>
               </View>
@@ -238,22 +248,22 @@ const OrdersPDFDocument = ({
             {/* Customer Info */}
             <View style={styles.spaceY}>
               <Text style={styles.textBold}>អតិថិជន:</Text>
-              <Text>{order.customerName}</Text>
-              <Text style={styles.englishFont}>{order.customerPhone}</Text>
-              <Text>
+              <Text style={styles.textBold}>{order.customerName}</Text>
+              <Text style={[styles.englishFont, styles.textBold]}>{order.customerPhone}</Text>
+              <Text style={styles.textBold}>
                 {order.customerLocation}
                 {order.province === "Phnom Penh"
                   ? ", Phnom Penh"
                   : ", Province"}
               </Text>
-              {order?.remark && <Text>ចំណាំ: {order.remark}</Text>}
+              {order?.remark && <Text style={styles.textBold}>ចំណាំ: {order.remark}</Text>}
             </View>
 
             {/* Product Table */}
             <View style={styles.table}>
               <View style={[styles.tableHeader, styles.textBold]}>
-                <Text style={styles.td}>ផលិតផល</Text>
-                <Text style={styles.td}>ចំនួន</Text>
+                <Text style={[styles.td, styles.textBold]}>ផលិតផល</Text>
+                <Text style={[styles.td, styles.textBold]}>ចំនួន</Text>
               </View>
               {products.map((item, index) => {
                 const variantInfo = formatVariantOptions(
@@ -262,12 +272,13 @@ const OrdersPDFDocument = ({
                 return (
                   <View key={index} style={styles.tableRow}>
                     <View style={styles.td}>
-                      <Text style={{ fontSize: 10 }}>{item.product.name}</Text>
+                      <Text style={{ fontSize: 10, fontWeight: "bold" }}>{item.product.name}</Text>
                       {variantInfo && (
                         <Text
                           style={{
                             fontSize: 8,
-                            color: "#666",
+                            color: "#000",
+                            fontWeight: "bold",
                             marginTop: 2,
                           }}
                         >
@@ -394,7 +405,10 @@ export default function OrdersPDFExport({
     try {
       await Promise.all(orders.map((o) => ordersAPI.markAsPrinted(o.id)));
       toast.success("Orders marked as printed successfully");
-      onPrintStatusChange?.(orders.map(o => o.id), true);
+      onPrintStatusChange?.(
+        orders.map((o) => o.id),
+        true
+      );
     } catch (error) {
       console.error("Failed to mark orders as printed:", error);
       toast.error("Failed to mark orders as printed");

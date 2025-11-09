@@ -200,7 +200,6 @@ export default function OrderDetailModal({
                     <span className=""> បញ្ជាដោយ: </span>
                     <span className="font-medium">
                       {order.creator?.name || "N/A"} (
-                      {order.creator?.role || ""})
                     </span>
                   </div>
                 )}
@@ -272,7 +271,7 @@ export default function OrderDetailModal({
                           {item.product.name}
                         </div>
                         {opts && (
-                          <div className="text-xs text-gray-600 mt-0.5">
+                          <div className="text-xs font-bold text-black mt-0.5">
                             {opts}
                           </div>
                         )}

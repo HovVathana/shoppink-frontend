@@ -153,7 +153,7 @@ export default function OrderModal({
     formState: { errors },
   } = useForm<OrderForm>({
     defaultValues: {
-      deliveryPrice: 0.0,
+      deliveryPrice: "" as any, // Empty by default to force user input
       companyDeliveryPrice: 1.2,
       totalPrice: 0,
       isPaid: false,
@@ -281,7 +281,7 @@ export default function OrderModal({
           province: "Phnom Penh",
           remark: "",
           driverId: "",
-          deliveryPrice: 0.0,
+          deliveryPrice: "" as any, // Empty by default for new orders
           companyDeliveryPrice: 1.2,
           totalPrice: 0,
           isPaid: false,
@@ -418,7 +418,7 @@ export default function OrderModal({
         province: "Phnom Penh",
         remark: "",
         driverId: "",
-        deliveryPrice: 0.0,
+        deliveryPrice: "" as any, // Empty by default
         companyDeliveryPrice: 1.2,
         totalPrice: 0,
         isPaid: false,
@@ -1628,15 +1628,25 @@ export default function OrderModal({
                   >
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
-                        Delivery Price
+                        Delivery Price <span className="text-red-500">*</span>
                       </label>
                       <input
-                        {...register("deliveryPrice")}
+                        {...register("deliveryPrice", {
+                          required: "Delivery price is required",
+                          min: { value: 0, message: "Delivery price must be at least 0" },
+                        })}
                         type="number"
                         step="0.01"
-                        className="input-field mt-1"
-                        placeholder="0.00"
+                        className={`input-field mt-1 ${
+                          errors.deliveryPrice ? "border-red-500" : ""
+                        }`}
+                        placeholder="Enter delivery price"
                       />
+                      {errors.deliveryPrice && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {errors.deliveryPrice.message}
+                        </p>
+                      )}
                     </div>
 
                     {/* {isAdmin && (
