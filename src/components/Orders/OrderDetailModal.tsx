@@ -199,7 +199,7 @@ export default function OrderDetailModal({
                   <div className="text-xs text-gray-600 ">
                     <span className=""> បញ្ជាដោយ: </span>
                     <span className="font-medium">
-                      {order.creator?.name || "N/A"} (
+                      {order.creator?.name || "N/A"}
                     </span>
                   </div>
                 )}

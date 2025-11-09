@@ -12,7 +12,6 @@ import OrderDetailModal from "@/components/Orders/OrderDetailModal";
 import PrintStatusCell from "@/components/Orders/PrintStatusCell";
 import { ordersAPI } from "@/lib/api";
 import { useBlacklist } from "@/contexts/BlacklistContext";
-import { useDrivers } from "@/contexts/DriversContext";
 import { cache } from "@/utils/simpleCache";
 import { copyToClipboard, formatOrderIdForDisplay } from "@/utils/clipboard";
 
@@ -49,6 +48,7 @@ interface Order {
   totalPrice: number;
   isPaid: boolean;
   isPrinted: boolean;
+  paymentProofUrl?: string;
   remark?: string;
   driverId?: string;
   deletedDriverName?: string;
@@ -96,18 +96,6 @@ const ORDER_STATES = [
     color: "text-yellow-600 bg-yellow-100",
   },
   {
-    value: "DELIVERING",
-    label: "Delivering",
-    icon: Truck,
-    color: "text-blue-600 bg-blue-100",
-  },
-  {
-    value: "RETURNED",
-    label: "Returned",
-    icon: XCircle,
-    color: "text-red-600 bg-red-100",
-  },
-  {
     value: "COMPLETED",
     label: "Completed",
     icon: CheckCircle,
@@ -116,12 +104,12 @@ const ORDER_STATES = [
   {
     value: "CANCELLED",
     label: "Cancelled",
-    icon: X,
+    icon: XCircle,
     color: "text-gray-600 bg-gray-100",
   },
 ];
 
-export default function OrdersPage() {
+export default function PickupOrdersPage() {
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [duplicatePhones, setDuplicatePhones] = useState<any[]>([]);
@@ -136,7 +124,6 @@ export default function OrdersPage() {
 
   const { isAuthenticated, loading: authLoading } = useAuth();
   const { blacklistSet, normalizePhone } = useBlacklist();
-  const { drivers, activeDrivers } = useDrivers();
   const { ordersPageState, updateOrdersPageState } = usePageState();
   const router = useRouter();
 
@@ -144,7 +131,6 @@ export default function OrdersPage() {
   const searchTerm = ordersPageState.searchTerm;
   const selectedState = ordersPageState.selectedState;
   const selectedProvince = ordersPageState.selectedProvince;
-  const selectedDriver = ordersPageState.selectedDriver;
   const sortField = ordersPageState.sortField;
   const sortDirection = ordersPageState.sortDirection;
   const currentPage = ordersPageState.currentPage;
@@ -161,7 +147,7 @@ export default function OrdersPage() {
     async (forceRefresh = false) => {
       if (!dateFrom || !dateTo) return;
 
-      const cacheKey = `orders-${dateFrom}-${dateTo}`;
+      const cacheKey = `pickup-orders-${dateFrom}-${dateTo}`;
 
       // Clear cache first if forcing refresh
       if (forceRefresh) {
@@ -184,13 +170,10 @@ export default function OrdersPage() {
           dateFrom,
           dateTo,
           limit: 5000, // Fetch all orders within date range
+          orderSource: "PICKUP", // Only fetch PICKUP orders
         };
         const response = await ordersAPI.getAll(params, forceRefresh); // Pass bustCache to API
-        // Filter to only show ADMIN orders (exclude CUSTOMER and PICKUP)
-        // This is a safety measure in case old orders don't have orderSource set
-        const orders = response.data.orders.filter(
-          (order: any) => !order.orderSource || order.orderSource === "ADMIN"
-        );
+        const orders = response.data.orders;
 
         // Cache the results
         cache.set(cacheKey, orders, 5); // 5 minutes cache
@@ -349,16 +332,14 @@ export default function OrdersPage() {
   // Quick function: Find orders by status
   const findOrdersByStatus = () => {
     const status = prompt(
-      "Enter status (PLACED, DELIVERING, COMPLETED, RETURNED, CANCELLED):"
+      "Enter status (PLACED, COMPLETED):"
     )?.toUpperCase();
     if (
       !status ||
-      !["PLACED", "DELIVERING", "COMPLETED", "RETURNED", "CANCELLED"].includes(
-        status
-      )
+      !["PLACED", "COMPLETED"].includes(status)
     ) {
       toast.error(
-        "Invalid status. Use: PLACED, DELIVERING, COMPLETED, RETURNED, or CANCELLED"
+        "Invalid status. Use: PLACED or COMPLETED"
       );
       return;
     }
@@ -448,17 +429,6 @@ export default function OrdersPage() {
       }
     }
 
-    // Filter by driver
-    if (selectedDriver) {
-      if (selectedDriver === "unassigned") {
-        filtered = filtered.filter((order) => !order.driverId);
-      } else {
-        filtered = filtered.filter(
-          (order) => order.driverId === selectedDriver
-        );
-      }
-    }
-
     // Sort orders
     filtered.sort((a, b) => {
       let aValue: any = a[sortField as keyof Order];
@@ -484,7 +454,6 @@ export default function OrdersPage() {
     searchTerm,
     selectedState,
     selectedProvince,
-    selectedDriver,
     sortField,
     sortDirection,
     dateFrom,
@@ -518,40 +487,6 @@ export default function OrdersPage() {
     }
   };
 
-  const handleDriverAssignment = async (orderId: string, driverId: string) => {
-    try {
-      // Find the driver object from the drivers list
-      const selectedDriver = driverId
-        ? drivers.find((d: any) => d.id === driverId)
-        : null;
-
-      // Optimistic update to prevent table reset
-      setAllOrders((prevOrders) =>
-        prevOrders.map((order) =>
-          order.id === orderId
-            ? {
-                ...order,
-                driverId: driverId || undefined,
-                driver: selectedDriver || undefined,
-                deletedDriverName: undefined, // Clear deleted driver name when assigning new driver
-                // Automatically change status to DELIVERING when driver is assigned, PLACED when unassigned
-                state: driverId ? "DELIVERING" : "PLACED",
-                assignedAt: driverId ? new Date().toISOString() : undefined,
-              }
-            : order
-        )
-      );
-
-      await ordersAPI.assignDriver(orderId, driverId || null);
-      toast.success("Driver assignment updated successfully");
-    } catch (error: any) {
-      const message =
-        error.response?.data?.message || "Failed to assign driver";
-      toast.error(message);
-      // Revert optimistic update on error
-      refreshOrders();
-    }
-  };
 
   const getStateInfo = (state: string) => {
     return ORDER_STATES.find((s) => s.value === state) || ORDER_STATES[0];
@@ -598,6 +533,54 @@ export default function OrdersPage() {
     return allOrders.filter((order: Order) =>
       selectedOrders.includes(order.id)
     );
+  };
+
+  const handleProofUpload = async (
+    orderId: string,
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be less than 5MB");
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Only image files are allowed");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("proofImage", file);
+
+    try {
+      toast.loading("Uploading proof image...");
+      const response = await ordersAPI.uploadPickupProof(orderId, formData);
+      
+      // Optimistic UI update: Update order with new proof URL
+      setAllOrders((prevOrders) =>
+        prevOrders.map((prevOrder) =>
+          prevOrder.id === orderId
+            ? { ...prevOrder, paymentProofUrl: response.data.proofUrl }
+            : prevOrder
+        )
+      );
+
+      toast.dismiss();
+      toast.success("Proof image uploaded successfully");
+
+      // Clear the file input
+      event.target.value = "";
+    } catch (error: any) {
+      toast.dismiss();
+      const message =
+        error.response?.data?.message || "Failed to upload proof image";
+      toast.error(message);
+    }
   };
 
   const handleDeleteOrder = async (order: Order) => {
@@ -800,9 +783,9 @@ export default function OrdersPage() {
                 <ShoppingCart className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
+                <h1 className="text-3xl font-bold text-gray-900">Pickup Orders</h1>
                 <p className="text-gray-600">
-                  Manage customer orders and track their status
+                  Manage pickup orders for walk-in customers
                 </p>
                 {selectedOrders.length > 0 && (
                   <p className="mt-1 text-sm text-blue-600 font-medium">
@@ -1108,23 +1091,7 @@ export default function OrdersPage() {
                   </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 mb-3">
-                  <select
-                    value={selectedDriver}
-                    onChange={(e) =>
-                      updateOrdersPageState({ selectedDriver: e.target.value })
-                    }
-                    className="menubox-input text-sm"
-                  >
-                    <option value="">All Drivers</option>
-                    <option value="unassigned">Unassigned</option>
-                    {drivers.map((driver: any) => (
-                      <option key={driver.id} value={driver.id}>
-                        {driver.name}
-                      </option>
-                    ))}
-                  </select>
-
+                <div className="mb-3">
                   <select
                     value={itemsPerPage}
                     onChange={(e) =>
@@ -1166,7 +1133,7 @@ export default function OrdersPage() {
 
               {/* Desktop: Original layout */}
               <div className="hidden md:block">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Status
@@ -1203,29 +1170,6 @@ export default function OrdersPage() {
                       <option value="">All Locations</option>
                       <option value="Phnom Penh">Phnom Penh</option>
                       <option value="Province">Province</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Driver
-                    </label>
-                    <select
-                      value={selectedDriver}
-                      onChange={(e) =>
-                        updateOrdersPageState({
-                          selectedDriver: e.target.value,
-                        })
-                      }
-                      className="menubox-input w-full"
-                    >
-                      <option value="">All Drivers</option>
-                      <option value="unassigned">Unassigned</option>
-                      {drivers.map((driver: any) => (
-                        <option key={driver.id} value={driver.id}>
-                          {driver.name}
-                        </option>
-                      ))}
                     </select>
                   </div>
 
@@ -1407,10 +1351,10 @@ export default function OrdersPage() {
                       Created By
                     </th>
                     <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Driver
+                      Remarks
                     </th>
                     <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Remarks
+                      Proof
                     </th>
                     <th className="px-4 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Actions
@@ -1612,52 +1556,44 @@ export default function OrdersPage() {
                             )}
                           </td>
 
-                          {/* Driver */}
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            {order.deletedDriverName && (
-                              <div className="text-xs text-red-600 italic mb-1">
-                                Deleted Driver: {order.deletedDriverName}
-                              </div>
-                            )}
-                            {/* {order.driver && !order.driver.isActive && (
-                              <div className="text-xs text-orange-600 italic mb-1">
-                                ⚠️ {order.driver.name} (Inactive)
-                              </div>
-                            )} */}
-                            <select
-                              value={order.driverId || ""}
-                              onChange={(e) =>
-                                handleDriverAssignment(order.id, e.target.value)
-                              }
-                              className="text-xs font-medium px-2 py-1 rounded border border-gray-300 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                            >
-                              <option value="">Unassigned</option>
-                              {/* Active Drivers */}
-                              {activeDrivers.map((driver: any) => (
-                                <option key={driver.id} value={driver.id}>
-                                  {driver.name}
-                                </option>
-                              ))}
-                              {/* Inactive Drivers */}
-                              {drivers
-                                .filter((d: any) => !d.isActive)
-                                .map((driver: any) => (
-                                  <option key={driver.id} value={driver.id}>
-                                    {driver.name} (Inactive)
-                                  </option>
-                                ))}
-                            </select>
-                            {order.driver?.phone && (
-                              <div className="text-xs text-gray-500 mt-1">
-                                {order.driver.phone}
-                              </div>
-                            )}
-                          </td>
-
                           {/* Remarks */}
                           <td className="px-4 py-4">
                             <div className="text-sm text-gray-500 truncate max-w-32">
                               {order.remark || "No remarks"}
+                            </div>
+                          </td>
+
+                          {/* Proof */}
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              {order.paymentProofUrl ? (
+                                <a
+                                  href={order.paymentProofUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-indigo-600 hover:text-indigo-900 text-xs"
+                                >
+                                  View Proof
+                                </a>
+                              ) : (
+                                <span className="text-gray-400 text-xs">
+                                  No proof
+                                </span>
+                              )}
+                              <label
+                                htmlFor={`proof-upload-${order.id}`}
+                                className="cursor-pointer text-blue-600 hover:text-blue-900 text-xs underline"
+                                title="Upload proof image"
+                              >
+                                Upload
+                              </label>
+                              <input
+                                id={`proof-upload-${order.id}`}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => handleProofUpload(order.id, e)}
+                              />
                             </div>
                           </td>
 
@@ -1793,6 +1729,8 @@ export default function OrdersPage() {
             isOpen={isOrderModalOpen}
             onClose={() => setIsOrderModalOpen(false)}
             onSaved={handleOrderSaved}
+            orderSource="PICKUP"
+            isPickupOrder={true}
           />
 
           {/* Order Edit Modal */}
@@ -1802,6 +1740,8 @@ export default function OrdersPage() {
             onSaved={handleOrderSaved}
             order={selectedOrder}
             isEditing={true}
+            orderSource="PICKUP"
+            isPickupOrder={true}
           />
 
           {/* Duplicate Phone Numbers Modal */}

@@ -287,6 +287,13 @@ export const ordersAPI = {
   getStats: () => api.get("/orders/stats/summary"),
   delete: (id: string) => api.delete(`/orders/${id}`),
   getDuplicatePhones: () => api.get("/orders/duplicates/phone"),
+  
+  uploadPickupProof: (id: string, formData: FormData) =>
+    api.post(`/orders/${id}/pickup-proof`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }),
 };
 
 // Blacklist Phones API with request deduplication and caching

@@ -45,6 +45,8 @@ interface OrderModalProps {
   onSaved: (order?: any) => void;
   order?: any;
   isEditing?: boolean;
+  orderSource?: string;
+  isPickupOrder?: boolean;
 }
 
 export default function OrderModal({
@@ -53,6 +55,8 @@ export default function OrderModal({
   onSaved,
   order,
   isEditing = false,
+  orderSource = "ADMIN",
+  isPickupOrder = false,
 }: OrderModalProps) {
   const { user } = useAuth();
   const { blacklistSet, normalizePhone } = useBlacklist();
@@ -153,8 +157,10 @@ export default function OrderModal({
     formState: { errors },
   } = useForm<OrderForm>({
     defaultValues: {
-      deliveryPrice: "" as any, // Empty by default to force user input
-      companyDeliveryPrice: 1.2,
+      deliveryPrice: isPickupOrder ? 0 : ("" as any), // 0 for pickup, empty otherwise
+      companyDeliveryPrice: isPickupOrder ? 0 : 1.2,
+      customerLocation: isPickupOrder ? "Pickup" : "",
+      province: isPickupOrder ? "Phnom Penh" : "",
       totalPrice: 0,
       isPaid: false,
       products: [{ productId: "", quantity: 1, price: 0 }],
@@ -191,12 +197,12 @@ export default function OrderModal({
         const formData = {
           customerName: order.customerName || "",
           customerPhone: order.customerPhone || "",
-          customerLocation: order.customerLocation || "",
-          province: order.province || "Phnom Penh",
+          customerLocation: isPickupOrder ? "Pickup" : (order.customerLocation || ""),
+          province: isPickupOrder ? "Phnom Penh" : (order.province || "Phnom Penh"),
           remark: order.remark || "",
           driverId: order.driverId || order.driver?.id || "",
-          deliveryPrice: Number(order.deliveryPrice) || 0.0,
-          companyDeliveryPrice: Number(order.companyDeliveryPrice) || 1.2,
+          deliveryPrice: isPickupOrder ? 0 : (Number(order.deliveryPrice) || 0.0),
+          companyDeliveryPrice: isPickupOrder ? 0 : (Number(order.companyDeliveryPrice) || 1.2),
           totalPrice: Number(order.totalPrice) || 0,
           isPaid: !!order.isPaid,
           products: orderProducts,
@@ -277,12 +283,12 @@ export default function OrderModal({
         const cleanFormData = {
           customerName: "",
           customerPhone: "",
-          customerLocation: "",
-          province: "Phnom Penh",
+          customerLocation: isPickupOrder ? "Pickup" : "",
+          province: isPickupOrder ? "Phnom Penh" : "Phnom Penh",
           remark: "",
           driverId: "",
-          deliveryPrice: "" as any, // Empty by default for new orders
-          companyDeliveryPrice: 1.2,
+          deliveryPrice: isPickupOrder ? 0 : ("" as any), // 0 for pickup, empty otherwise
+          companyDeliveryPrice: isPickupOrder ? 0 : 1.2,
           totalPrice: 0,
           isPaid: false,
           products: [{ productId: "", quantity: 1, price: 0 }],
@@ -297,7 +303,7 @@ export default function OrderModal({
         setVariantsByProduct({}); // Clear variants cache
       }
     }
-  }, [isOpen, isEditing, order, products.length, drivers.length, reset]);
+  }, [isOpen, isEditing, order, products.length, drivers.length, reset, isPickupOrder]);
 
   // Additional effect to restore options when products are loaded and form is ready
   useEffect(() => {
@@ -414,12 +420,12 @@ export default function OrderModal({
       reset({
         customerName: "",
         customerPhone: "",
-        customerLocation: "",
-        province: "Phnom Penh",
+        customerLocation: isPickupOrder ? "Pickup" : "",
+        province: isPickupOrder ? "Phnom Penh" : "Phnom Penh",
         remark: "",
         driverId: "",
-        deliveryPrice: "" as any, // Empty by default
-        companyDeliveryPrice: 1.2,
+        deliveryPrice: isPickupOrder ? 0 : ("" as any),
+        companyDeliveryPrice: isPickupOrder ? 0 : 1.2,
         totalPrice: 0,
         isPaid: false,
         products: [{ productId: "", quantity: 1, price: 0 }],
@@ -925,6 +931,7 @@ export default function OrderModal({
         totalPrice: data.totalPrice || totals.totalPrice,
         isPaid: !!data.isPaid,
         driverId: data.driverId || null,
+        orderSource: orderSource,
         products: data.products.map((item, index) => {
           const product = products.find((p) => p.id === item.productId);
           const productOptions = selectedOptions[index] || {};
@@ -1084,44 +1091,48 @@ export default function OrderModal({
                     )}
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Customer Location *
-                    </label>
-                    <input
-                      {...register("customerLocation", {
-                        required: "Customer location is required",
-                      })}
-                      type="text"
-                      className="input-field mt-1"
-                      placeholder="Enter customer address"
-                    />
-                    {errors.customerLocation && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {errors.customerLocation.message}
-                      </p>
-                    )}
-                  </div>
+                  {!isPickupOrder && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Customer Location *
+                        </label>
+                        <input
+                          {...register("customerLocation", {
+                            required: !isPickupOrder ? "Customer location is required" : false,
+                          })}
+                          type="text"
+                          className="input-field mt-1"
+                          placeholder="Enter customer address"
+                        />
+                        {errors.customerLocation && (
+                          <p className="mt-1 text-sm text-red-600">
+                            {errors.customerLocation.message}
+                          </p>
+                        )}
+                      </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Province *
-                    </label>
-                    <select
-                      {...register("province", {
-                        required: "Province is required",
-                      })}
-                      className="input-field mt-1"
-                    >
-                      <option value="Phnom Penh">Phnom Penh</option>
-                      <option value="Province">Province</option>
-                    </select>
-                    {errors.province && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {errors.province.message}
-                      </p>
-                    )}
-                  </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Province *
+                        </label>
+                        <select
+                          {...register("province", {
+                            required: !isPickupOrder ? "Province is required" : false,
+                          })}
+                          className="input-field mt-1"
+                        >
+                          <option value="Phnom Penh">Phnom Penh</option>
+                          <option value="Province">Province</option>
+                        </select>
+                        {errors.province && (
+                          <p className="mt-1 text-sm text-red-600">
+                            {errors.province.message}
+                          </p>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <div className="mt-4">
@@ -1136,7 +1147,7 @@ export default function OrderModal({
                   />
                 </div>
 
-                {isEditing && (
+                {isEditing && !isPickupOrder && (
                   <div className="mt-4">
                     <label className="block text-sm font-medium text-gray-700">
                       Assign Driver (Optional)
@@ -1623,31 +1634,33 @@ export default function OrderModal({
                   </h4>
                   <div
                     className={`grid grid-cols-1 ${
-                      isAdmin ? "md:grid-cols-3" : "md:grid-cols-2"
+                      isPickupOrder ? "md:grid-cols-1" : isAdmin ? "md:grid-cols-3" : "md:grid-cols-2"
                     } gap-4`}
                   >
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Delivery Price <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        {...register("deliveryPrice", {
-                          required: "Delivery price is required",
-                          min: { value: 0, message: "Delivery price must be at least 0" },
-                        })}
-                        type="number"
-                        step="0.01"
-                        className={`input-field mt-1 ${
-                          errors.deliveryPrice ? "border-red-500" : ""
-                        }`}
-                        placeholder="Enter delivery price"
-                      />
-                      {errors.deliveryPrice && (
-                        <p className="text-xs text-red-500 mt-1">
-                          {errors.deliveryPrice.message}
-                        </p>
-                      )}
-                    </div>
+                    {!isPickupOrder && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Delivery Price <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          {...register("deliveryPrice", {
+                            required: !isPickupOrder ? "Delivery price is required" : false,
+                            min: { value: 0, message: "Delivery price must be at least 0" },
+                          })}
+                          type="number"
+                          step="0.01"
+                          className={`input-field mt-1 ${
+                            errors.deliveryPrice ? "border-red-500" : ""
+                          }`}
+                          placeholder="Enter delivery price"
+                        />
+                        {errors.deliveryPrice && (
+                          <p className="text-xs text-red-500 mt-1">
+                            {errors.deliveryPrice.message}
+                          </p>
+                        )}
+                      </div>
+                    )}
 
                     {/* {isAdmin && (
                       <div>
@@ -1713,16 +1726,18 @@ export default function OrderModal({
                     <span>Total Weight:</span>
                     <span>{totals.totalWeight.toFixed(2)} kg</span>
                   </div>
-                  {isAdmin && (
+                  {!isPickupOrder && isAdmin && (
                     <div className="flex justify-between">
                       <span>Company Delivery Fee:</span>
                       <span>${totals.companyDeliveryPrice.toFixed(2)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between">
-                    <span>Delivery Price:</span>
-                    <span>${totals.deliveryPrice.toFixed(2)}</span>
-                  </div>
+                  {!isPickupOrder && (
+                    <div className="flex justify-between">
+                      <span>Delivery Price:</span>
+                      <span>${totals.deliveryPrice.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-lg font-bold border-t pt-2">
                     <span>Total:</span>
                     <span>${totals.totalPrice.toFixed(2)}</span>

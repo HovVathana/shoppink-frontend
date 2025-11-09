@@ -72,6 +72,13 @@ const allNavigation = [
     permission: "view_orders",
   },
   {
+    name: "Pickup Orders",
+    href: "/dashboard/pickup-orders",
+    icon: ShoppingBag,
+    shortName: "Pickup",
+    permission: "view_orders",
+  },
+  {
     name: "Assign Orders",
     href: "/dashboard/assign-orders",
     icon: UserPlus,
