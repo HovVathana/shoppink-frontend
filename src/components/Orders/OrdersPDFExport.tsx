@@ -102,6 +102,16 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "bold",
   },
+  tdWithBorder: {
+    padding: 6,
+    color: "#000",
+    flex: 1,
+    textAlign: "center",
+    fontWeight: "bold",
+    borderLeftWidth: 2,
+    borderLeftColor: "#000",
+    borderLeftStyle: "solid",
+  },
   totals: {
     marginTop: 8,
     alignItems: "flex-end",
@@ -263,7 +273,7 @@ const OrdersPDFDocument = ({
             <View style={styles.table}>
               <View style={[styles.tableHeader, styles.textBold]}>
                 <Text style={[styles.td, styles.textBold]}>ផលិតផល</Text>
-                <Text style={[styles.td, styles.textBold]}>ចំនួន</Text>
+                <Text style={[styles.tdWithBorder, styles.textBold]}>ចំនួន</Text>
               </View>
               {products.map((item, index) => {
                 const variantInfo = formatVariantOptions(
@@ -288,7 +298,7 @@ const OrdersPDFDocument = ({
                     </View>
                     <View
                       style={[
-                        styles.td,
+                        styles.tdWithBorder,
                         { alignItems: "center", justifyContent: "center" },
                       ]}
                     >

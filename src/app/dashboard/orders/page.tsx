@@ -1720,7 +1720,7 @@ export default function OrdersPage() {
                   </button>
                 </div>
                 <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                  <div>
+                  <div className="flex items-center gap-4">
                     <p className="text-sm text-gray-700">
                       Showing{" "}
                       <span className="font-medium">
@@ -1738,6 +1738,16 @@ export default function OrdersPage() {
                         {filteredOrders.length}
                       </span>{" "}
                       results
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Page{" "}
+                      <span className="font-medium text-gray-700">
+                        {currentPage}
+                      </span>{" "}
+                      of{" "}
+                      <span className="font-medium text-gray-700">
+                        {Math.ceil(filteredOrders.length / itemsPerPage)}
+                      </span>
                     </p>
                   </div>
                   <div>
