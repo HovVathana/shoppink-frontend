@@ -152,7 +152,6 @@ export default function OrdersPage() {
   const dateTo = ordersPageState.dateTo;
   const itemsPerPage = ordersPageState.itemsPerPage;
 
-  // Simple state management without complex caching
   const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
 
