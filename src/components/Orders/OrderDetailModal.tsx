@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useRef, useCallback, useEffect, useState } from "react";
-import { XCircle, Download } from "lucide-react";
-import { toPng } from "html-to-image";
+import React from "react";
+import { XCircle } from "lucide-react";
 
 interface OrderItemOptionGroup {
   groupId: string;
@@ -96,55 +95,6 @@ export default function OrderDetailModal({
   if (!isOpen || !order) return null;
 
   const orderDate = new Date(order.orderAt).toLocaleString();
-  const receiptRef = useRef<HTMLDivElement>(null);
-
-  const handleSaveImage = useCallback(async () => {
-    if (!receiptRef.current || !imageUrl) return;
-    try {
-      const link = document.createElement("a");
-      link.download = `order-${order.id}.png`;
-      link.href = imageUrl;
-      link.click();
-    } catch (e) {
-      console.error("Failed to export image", e);
-    }
-  }, [order.id]);
-
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    // reset image when order changes or modal opens
-    setImageUrl(null);
-  }, [order.id, isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const el = receiptRef.current;
-    if (!el) return;
-    const timer = setTimeout(async () => {
-      try {
-        const dataUrl = await toPng(el, {
-          pixelRatio: 2,
-          backgroundColor: "#ffffff",
-          filter: (node: any) => {
-            try {
-              if (
-                node?.getAttribute &&
-                node.getAttribute("data-skip-capture") === "true"
-              ) {
-                return false;
-              }
-            } catch {}
-            return true;
-          },
-        });
-        setImageUrl(dataUrl);
-      } catch (e) {
-        console.error("Failed to render image", e);
-      }
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [isOpen, order.id]);
 
   return (
     <div className="khmerFont fixed inset-0 z-50 overflow-y-auto">
@@ -156,36 +106,17 @@ export default function OrderDetailModal({
 
         {/* Receipt-like narrow modal */}
         <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle w-full max-w-md">
-          {/* Controls (outside capture area) */}
-          <div className="px-5 pt-3 pb-0 flex justify-end gap-2">
-            <button
-              onClick={handleSaveImage}
-              disabled={!imageUrl}
-              data-skip-capture="true"
-              className={`text-xs flex items-center gap-1 ${
-                imageUrl
-                  ? "text-blue-600 hover:text-blue-800"
-                  : "text-gray-400 cursor-not-allowed"
-              }`}
-            >
-              <Download className="h-4 w-4" />
-              <span>Save Image</span>
-            </button>
+          {/* Controls */}
+          <div className="px-5 pt-3 pb-0 flex justify-end">
             <button
               onClick={onClose}
-              data-skip-capture="true"
               className="text-gray-400 hover:text-gray-600"
             >
               <XCircle className="h-6 w-6" />
             </button>
           </div>
 
-          <div
-            className={`bg-white ${
-              imageUrl ? "hidden pt-5 pb-0" : "block py-5"
-            }`}
-            ref={receiptRef}
-          >
+          <div className="bg-white py-5">
             {/* Header */}
             <div className="px-5 pb-3 border-b border-gray-200 flex items-end justify-between">
               <div>
@@ -327,20 +258,7 @@ export default function OrderDetailModal({
                 </div>
               </div>
             </div>
-            {/* </div> */}
           </div>
-
-          {/* Image preview for iOS long-press save */}
-          {imageUrl && (
-            <div className="px-5 mt-3 pb-12">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={imageUrl}
-                alt="Order receipt"
-                className="w-full h-auto rounded-md border border-gray-200"
-              />
-            </div>
-          )}
         </div>
       </div>
     </div>
