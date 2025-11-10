@@ -38,6 +38,7 @@ interface Order {
   customerPhone: string;
   customerLocation: string;
   province: string;
+  state: string;
   orderAt: string;
   assignedAt?: string;
   completedAt?: string;
