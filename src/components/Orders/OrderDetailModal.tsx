@@ -147,11 +147,11 @@ export default function OrderDetailModal({
             {/* Barcode */}
             <div className="flex justify-center mt-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              {/* <img
                 src={`https://bwipjs-api.metafloor.com/?bcid=code128&text=${order.id}&scale=2&height=10&includetext`}
                 alt="barcode"
                 className="w-[200px] h-[30px]"
-              />
+              /> */}
             </div>
 
             {/* Customer Info */}
