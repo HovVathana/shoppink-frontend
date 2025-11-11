@@ -210,6 +210,14 @@ export default function AssignedOrdersPage() {
     [dateFrom, dateTo]
   );
 
+  // Set default sort order on mount
+  useEffect(() => {
+    updateAssignedPageState({
+      sortField: "assignedAt",
+      sortDirection: "asc",
+    });
+  }, []);
+
   // Fetch data when component mounts or dates change
   useEffect(() => {
     fetchOrders();

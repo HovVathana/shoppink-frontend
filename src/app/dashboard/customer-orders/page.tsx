@@ -226,6 +226,14 @@ export default function CustomerOrdersPage() {
     [dateFrom, dateTo]
   );
 
+  // Set default sort order on mount
+  useEffect(() => {
+    updateCustomerOrdersPageState({
+      sortField: "orderAt",
+      sortDirection: "asc",
+    });
+  }, []);
+
   // Fetch data when component mounts or dates change
   useEffect(() => {
     fetchOrders();

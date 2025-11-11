@@ -189,6 +189,19 @@ export default function PickupOrdersPage() {
     [dateFrom, dateTo]
   );
 
+  // Set default sort order on mount
+  useEffect(() => {
+    updateOrdersPageState({
+      sortField: "orderAt",
+      sortDirection: "asc",
+    });
+  }, []);
+
+  // Fetch data when component mounts or dates change
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
   const findDuplicatePhones = () => {
     // Group orders by phone number
     const phoneGroups = new Map();

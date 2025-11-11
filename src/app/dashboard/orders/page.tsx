@@ -402,6 +402,14 @@ export default function OrdersPage() {
     );
   };
 
+  // Set default sort to orderAt ascending (oldest first) on initial load
+  useEffect(() => {
+    updateOrdersPageState({
+      sortField: "orderAt",
+      sortDirection: "asc",
+    });
+  }, []); // Empty dependency - runs once on mount
+
   // Fetch data when component mounts or dates change
   useEffect(() => {
     fetchOrders();
