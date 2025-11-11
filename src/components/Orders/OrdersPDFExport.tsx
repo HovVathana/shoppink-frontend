@@ -209,9 +209,16 @@ const OrdersPDFDocument = ({
   const width = 100 * MM_TO_PT; // 283.465 pt
   const height = 150 * MM_TO_PT; // 425.1975 pt
 
+  // Sort orders by orderAt date (oldest to newest) for consistent printing
+  const sortedOrders = [...orders].sort((a, b) => {
+    const dateA = new Date(a.orderAt).getTime();
+    const dateB = new Date(b.orderAt).getTime();
+    return dateA - dateB; // ascending order (oldest first)
+  });
+
   return (
     <Document>
-      {orders.map((order, i) => {
+      {sortedOrders.map((order, i) => {
         const orderDate = new Date(order.orderAt).toLocaleString();
         const products = order.orderItems || [];
 
@@ -246,13 +253,15 @@ const OrdersPDFDocument = ({
 
             {/* Barcode */}
             <View style={{ alignItems: "center", marginTop: 10 }}>
-              <Image
-                src={`https://bwipjs-api.metafloor.com/?bcid=code128&text=${order.id}&scale=2&height=10&includetext`}
-                style={{
-                  width: 200,
-                  height: 30,
-                }}
-              />
+              {order.id && (
+                <Image
+                  src={`https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(order.id)}&scale=2&height=10&includetext`}
+                  style={{
+                    width: 200,
+                    height: 30,
+                  }}
+                />
+              )}
             </View>
 
             {/* Customer Info */}
@@ -407,21 +416,63 @@ export default function OrdersPDFExport({
     );
   }
 
+  // Warn if too many orders
+  const MAX_RECOMMENDED = 100;
+  const tooManyOrders = orders.length > MAX_RECOMMENDED;
+
   const hasAlreadyPrintedOrders = orders.some((o) => o.isPrinted);
   const allOrdersPrinted = orders.every((o) => o.isPrinted);
 
   const markOrdersAsPrinted = async () => {
+    // Don't block PDF export - mark as printed in background
     setIsUpdating(true);
+    
     try {
-      await Promise.all(orders.map((o) => ordersAPI.markAsPrinted(o.id)));
-      toast.success("Orders marked as printed successfully");
-      onPrintStatusChange?.(
-        orders.map((o) => o.id),
-        true
-      );
+      // Process in batches to avoid overwhelming the API
+      const BATCH_SIZE = 10;
+      const batches = [];
+      
+      for (let i = 0; i < orders.length; i += BATCH_SIZE) {
+        batches.push(orders.slice(i, i + BATCH_SIZE));
+      }
+      
+      // Process batches sequentially with individual error handling
+      let successCount = 0;
+      let failCount = 0;
+      
+      for (const batch of batches) {
+        const results = await Promise.allSettled(
+          batch.map((o) => ordersAPI.markAsPrinted(o.id))
+        );
+        
+        results.forEach((result) => {
+          if (result.status === 'fulfilled') {
+            successCount++;
+          } else {
+            failCount++;
+          }
+        });
+      }
+      
+      // Update UI with successful marks
+      if (successCount > 0) {
+        const successfulIds = orders
+          .slice(0, successCount)
+          .map(o => o.id);
+        onPrintStatusChange?.(successfulIds, true);
+      }
+      
+      // Show appropriate message
+      if (failCount === 0) {
+        toast.success("Orders marked as printed successfully");
+      } else if (successCount > 0) {
+        toast.success(`${successCount} orders marked as printed. ${failCount} failed (database issue).`);
+      } else {
+        toast.error("Failed to mark orders as printed (database issue). PDF still generated.");
+      }
     } catch (error) {
       console.error("Failed to mark orders as printed:", error);
-      toast.error("Failed to mark orders as printed");
+      toast.error("Failed to mark orders as printed (database issue). PDF still generated.");
     } finally {
       setIsUpdating(false);
     }
@@ -454,23 +505,50 @@ export default function OrdersPDFExport({
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
+  const handleClick = () => {
+    if (tooManyOrders) {
+      const proceed = window.confirm(
+        `You're exporting ${orders.length} orders. This may take a while.\n\n` +
+        `For best results, export ${MAX_RECOMMENDED} or fewer orders at a time.\n\n` +
+        `Continue anyway?`
+      );
+      if (!proceed) return false;
+    }
+    
+    // Mark as printed asynchronously - don't wait for it
+    // This ensures PDF generation is never blocked by database issues
+    markOrdersAsPrinted().catch(err => {
+      console.error('Background mark as printed failed:', err);
+      // Error already handled in markOrdersAsPrinted
+    });
+  };
+
   return (
-    <PDFDownloadLink
-      document={<OrdersPDFDocument orders={orders} title={title} />}
-      fileName={`${safeTitle}-${new Date().toISOString().split("T")[0]}.pdf`}
-      className="menubox-button-primary flex items-center"
-      onClick={markOrdersAsPrinted}
-    >
-      {({ loading }) => (
-        <>
-          <Download className="h-4 w-4 mr-2" />
-          {loading
-            ? "Generating PDF..."
-            : isUpdating
-            ? "Marking as Printed..."
-            : "Export PDF"}
-        </>
+    <div className="flex flex-col">
+      <PDFDownloadLink
+        document={<OrdersPDFDocument orders={orders} title={title} />}
+        fileName={`${safeTitle}-${new Date().toISOString().split("T")[0]}.pdf`}
+        className="menubox-button-primary flex items-center"
+        onClick={handleClick}
+      >
+        {({ loading, error }) => (
+          <>
+            <Download className="h-4 w-4 mr-2" />
+            {loading
+              ? "Generating PDF..."
+              : isUpdating
+              ? "Marking as Printed..."
+              : error
+              ? "Retry Export"
+              : `Export PDF (${orders.length})`}
+          </>
+        )}
+      </PDFDownloadLink>
+      {tooManyOrders && (
+        <span className="text-xs text-yellow-600 mt-1">
+          ⚠️ Large export - may be slow
+        </span>
       )}
-    </PDFDownloadLink>
+    </div>
   );
 }
