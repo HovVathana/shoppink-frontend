@@ -505,22 +505,27 @@ export default function OrdersPDFExport({
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-  const handleClick = () => {
+  const handleClick = (e: any) => {
     if (tooManyOrders) {
       const proceed = window.confirm(
         `You're exporting ${orders.length} orders. This may take a while.\n\n` +
         `For best results, export ${MAX_RECOMMENDED} or fewer orders at a time.\n\n` +
         `Continue anyway?`
       );
-      if (!proceed) return false;
+      if (!proceed) {
+        e.preventDefault();
+        return;
+      }
     }
     
     // Mark as printed asynchronously - don't wait for it
     // This ensures PDF generation is never blocked by database issues
-    markOrdersAsPrinted().catch(err => {
-      console.error('Background mark as printed failed:', err);
-      // Error already handled in markOrdersAsPrinted
-    });
+    setTimeout(() => {
+      markOrdersAsPrinted().catch(err => {
+        console.error('Background mark as printed failed:', err);
+        // Error already handled in markOrdersAsPrinted
+      });
+    }, 100); // Small delay to let PDF download start
   };
 
   return (
