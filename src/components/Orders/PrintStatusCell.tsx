@@ -10,12 +10,14 @@ interface PrintStatusCellProps {
   orderId: string;
   isPrinted: boolean;
   onPrintStatusChange?: (orderId: string, newStatus: boolean) => void;
+  canResetPrintStatus?: boolean;
 }
 
 export default function PrintStatusCell({ 
   orderId, 
   isPrinted, 
-  onPrintStatusChange 
+  onPrintStatusChange,
+  canResetPrintStatus = true // Default to true for backward compatibility
 }: PrintStatusCellProps) {
   const [isResetting, setIsResetting] = useState(false);
 
@@ -74,8 +76,8 @@ export default function PrintStatusCell({
         </div>
       </button>
       
-      {/* Reset Button - Only show if order is printed */}
-      {isPrinted && (
+      {/* Reset Button - Only show if order is printed and user has permission */}
+      {isPrinted && canResetPrintStatus && (
         <button
           onClick={handleResetPrintStatus}
           disabled={isResetting}

@@ -124,6 +124,9 @@ export const productsAPI = {
   },
 
   delete: (id: string) => api.delete(`/products/${id}`),
+
+  updateNote: (id: string, note: string) =>
+    api.patch(`/products/${id}/note`, { note }),
 };
 
 // Product Options API

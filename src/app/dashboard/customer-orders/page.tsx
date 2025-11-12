@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import DashboardLayout from "@/components/Layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/contexts/PermissionContext";
 import { customerOrdersAPI, ordersAPI } from "@/lib/api";
 import toast from "react-hot-toast";
 import { usePageState } from "@/contexts/PageStateContext";
@@ -152,6 +153,7 @@ const ORDER_STATES = [
 
 export default function CustomerOrdersPage() {
   const { user } = useAuth();
+  const { canEditOrders } = usePermissions();
   const { blacklistSet, normalizePhone } = useBlacklist();
   const { drivers, activeDrivers, refreshDrivers } = useDrivers();
   const { customerOrdersPageState, updateCustomerOrdersPageState } =
@@ -314,6 +316,14 @@ export default function CustomerOrdersPage() {
     dateFrom,
     dateTo,
   ]);
+
+  // Reset to page 1 if current page exceeds total pages
+  useEffect(() => {
+    const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+    if (currentPage > totalPages && totalPages > 0) {
+      updateCustomerOrdersPageState({ currentPage: 1 });
+    }
+  }, [filteredOrders.length, itemsPerPage, currentPage, updateCustomerOrdersPageState]);
 
   const handleSort = (field: string) => {
     const newDirection =
@@ -1320,6 +1330,7 @@ export default function CustomerOrdersPage() {
                               orderId={order.id}
                               isPrinted={order.isPrinted}
                               onPrintStatusChange={refreshOrders}
+                              canResetPrintStatus={canEditOrders()}
                             />
                           </td>
 

@@ -122,7 +122,8 @@ export default function DashboardPage() {
 
   // Separate date filter for monthly sales report, top products, and status distribution
   const [salesReportPeriod, setSalesReportPeriod] = useState("current_day");
-  const [previousSalesReportPeriod, setPreviousSalesReportPeriod] = useState(null);
+  const [previousSalesReportPeriod, setPreviousSalesReportPeriod] =
+    useState(null);
 
   const [loading, setLoading] = useState(true);
 
@@ -147,9 +148,9 @@ export default function DashboardPage() {
     switch (period) {
       case "current_day":
         // Use UTC methods to avoid timezone issues
-        const todayStr = now.toISOString().split('T')[0]; // Get YYYY-MM-DD format
-        startDate = new Date(todayStr + 'T00:00:00.000Z');
-        endDate = new Date(todayStr + 'T23:59:59.999Z');
+        const todayStr = now.toISOString().split("T")[0]; // Get YYYY-MM-DD format
+        startDate = new Date(todayStr + "T00:00:00.000Z");
+        endDate = new Date(todayStr + "T23:59:59.999Z");
         break;
       case "current_month":
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -179,9 +180,9 @@ export default function DashboardPage() {
         break;
       default:
         // Default to current day if period is unrecognized
-        const defaultTodayStr = now.toISOString().split('T')[0];
-        startDate = new Date(defaultTodayStr + 'T00:00:00.000Z');
-        endDate = new Date(defaultTodayStr + 'T23:59:59.999Z');
+        const defaultTodayStr = now.toISOString().split("T")[0];
+        startDate = new Date(defaultTodayStr + "T00:00:00.000Z");
+        endDate = new Date(defaultTodayStr + "T23:59:59.999Z");
     }
 
     return {
@@ -205,10 +206,11 @@ export default function DashboardPage() {
       try {
         const dateRange = getSalesReportDateRange(salesReportPeriod);
 
-
         // Check cache first - include actual date range in cache key to ensure fresh data when dates change
         const cacheKey = `sales-report-${salesReportPeriod}-${dateRange.from}-${dateRange.to}`;
-        const periodChanged = previousSalesReportPeriod === null || salesReportPeriod !== previousSalesReportPeriod;
+        const periodChanged =
+          previousSalesReportPeriod === null ||
+          salesReportPeriod !== previousSalesReportPeriod;
         const cachedData = !periodChanged ? cache.get(cacheKey) : null; // Skip cache if period changed
 
         if (cachedData) {
@@ -229,7 +231,6 @@ export default function DashboardPage() {
         const orders = Array.isArray(response.data.orders)
           ? response.data.orders
           : [];
-
 
         // Calculate daily orders data for chart
         const dailyOrdersMap = new Map();
@@ -283,9 +284,9 @@ export default function DashboardPage() {
           });
         });
 
-        const topProductsData = Array.from(productSalesMap.values())
-          .sort((a, b) => b.quantity - a.quantity)
-          .slice(0, 5);
+        const topProductsData = Array.from(productSalesMap.values()).sort(
+          (a, b) => b.quantity - a.quantity
+        );
 
         // Calculate status distribution
         const placedOrders = orders.filter(
@@ -338,13 +339,13 @@ export default function DashboardPage() {
           topProducts: topProductsData,
           statusData: statusData,
         };
-        const cacheMinutes = salesReportPeriod === 'current_day' ? 1 : 5; // 1 minute for current day, 5 for others
+        const cacheMinutes = salesReportPeriod === "current_day" ? 1 : 5; // 1 minute for current day, 5 for others
         cache.set(cacheKey, cacheData, cacheMinutes);
 
         setDailyOrdersData(dailyData);
         setTopProducts(topProductsData);
         setStatusDistribution(statusData);
-        
+
         // Update previous period to track changes
         setPreviousSalesReportPeriod(salesReportPeriod);
       } catch (error) {
@@ -390,16 +391,18 @@ export default function DashboardPage() {
       if (cachedData) {
         setStats(cachedData.stats);
         setDriverStats(cachedData.driverStats || []);
-        setUnassignedStats(cachedData.unassignedStats || {
-          id: "unassigned",
-          name: "Unassigned",
-          total: 0,
-          delivering: 0,
-          completed: 0,
-          returned: 0,
-          delivery: 0,
-          totalAmount: 0,
-        });
+        setUnassignedStats(
+          cachedData.unassignedStats || {
+            id: "unassigned",
+            name: "Unassigned",
+            total: 0,
+            delivering: 0,
+            completed: 0,
+            returned: 0,
+            delivery: 0,
+            totalAmount: 0,
+          }
+        );
         setLoading(false);
         return;
       }
@@ -415,7 +418,6 @@ export default function DashboardPage() {
         driversAPI.getAllActive(), // Get all active drivers without pagination
       ]);
 
-
       const orders = Array.isArray(ordersResponse.data.orders)
         ? ordersResponse.data.orders
         : [];
@@ -423,10 +425,8 @@ export default function DashboardPage() {
         ? driversResponse.data.drivers
         : [];
 
-
       // Orders are already filtered by date range on the backend
       const filteredOrders = orders;
-
 
       // Calculate main statistics
       const totalOrders = filteredOrders.length;
@@ -448,17 +448,23 @@ export default function DashboardPage() {
 
       // Calculate revenue statistics
       // Total revenue with returns - sum of total price of ALL orders (including returned)
-      const totalRevenueWithReturns = filteredOrders
-        .reduce((sum: number, order: any) => sum + (order.totalPrice || 0), 0);
+      const totalRevenueWithReturns = filteredOrders.reduce(
+        (sum: number, order: any) => sum + (order.totalPrice || 0),
+        0
+      );
 
       // Total revenue (PP) - sum of total price of orders in Phnom Penh (excluding returned)
       const totalRevenuePP = filteredOrders
-        .filter((o: any) => o.province === "Phnom Penh" && o.state !== "RETURNED")
+        .filter(
+          (o: any) => o.province === "Phnom Penh" && o.state !== "RETURNED"
+        )
         .reduce((sum: number, order: any) => sum + (order.totalPrice || 0), 0);
 
       // Total revenue (Province) - sum of total price of orders in Province (excluding returned)
       const totalRevenueProvince = filteredOrders
-        .filter((o: any) => o.province !== "Phnom Penh" && o.state !== "RETURNED")
+        .filter(
+          (o: any) => o.province !== "Phnom Penh" && o.state !== "RETURNED"
+        )
         .reduce((sum: number, order: any) => sum + (order.totalPrice || 0), 0);
 
       // Total revenue - sum of total price of orders excluding returned orders
@@ -565,7 +571,7 @@ export default function DashboardPage() {
         if (order.driverId && driverStatsMap.has(order.driverId)) {
           const driverStat = driverStatsMap.get(order.driverId);
           driverStat.total++;
-          
+
           // Only count delivery fee and total amount for COMPLETED orders
           if (order.state === "COMPLETED") {
             driverStat.totalAmount += order.totalPrice || 0;
@@ -578,7 +584,7 @@ export default function DashboardPage() {
         } else {
           // Unassigned orders
           unassignedCount++;
-          
+
           // Only count delivery fee and total amount for COMPLETED unassigned orders
           if (order.state === "COMPLETED") {
             unassignedTotal += order.totalPrice || 0;
@@ -1231,7 +1237,8 @@ export default function DashboardPage() {
                     Driver Performance
                   </h2>
                   <p className="text-gray-600 text-sm">
-                    Individual driver statistics and metrics (delivery fees and amounts from completed orders only)
+                    Individual driver statistics and metrics (delivery fees and
+                    amounts from completed orders only)
                   </p>
                 </div>
               </div>

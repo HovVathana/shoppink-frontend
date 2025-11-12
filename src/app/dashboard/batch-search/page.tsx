@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/Layout/DashboardLayout";
 import { ordersAPI } from "@/lib/api";
+import OrdersExcelExport from "@/components/Orders/OrdersExcelExport";
 import toast from "react-hot-toast";
 import {
   Search,
@@ -17,22 +18,46 @@ import {
 
 interface Order {
   id: string;
+  customerName: string;
+  customerPhone: string;
   customerLocation: string;
   province: string;
+  remark?: string;
   state: string;
   subtotalPrice: number;
   deliveryPrice: number;
   companyDeliveryPrice: number;
   totalPrice: number;
+  isPaid: boolean;
+  isPrinted: boolean;
+  orderAt: string;
   createdAt: string;
   assignedAt?: string;
   completedAt?: string;
   returnedAt?: string;
+  updatedAt: string;
+  driverId?: string;
+  createdBy: string;
   driver?: {
     id: string;
     name: string;
     phone: string;
   };
+  creator?: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+  };
+  orderItems: Array<{
+    id: string;
+    quantity: number;
+    price: number;
+    product: {
+      name: string;
+    };
+    optionDetails?: any;
+  }>;
 }
 
 interface ResultRow {
@@ -75,6 +100,7 @@ export default function BatchSearchPage() {
   const [orderIds, setOrderIds] = useState("");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<ResultRow[]>([]);
+  const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
 
   const { isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -102,6 +128,7 @@ export default function BatchSearchPage() {
     }
 
     setLoading(true);
+    setSelectedOrders([]); // Clear selection on new search
     try {
       const requests: Promise<ResultRow>[] = parsedIds.map((id) =>
         ordersAPI
@@ -130,6 +157,32 @@ export default function BatchSearchPage() {
     }
   };
 
+  const handleSelectOrder = (orderId: string) => {
+    setSelectedOrders((prev) =>
+      prev.includes(orderId)
+        ? prev.filter((id) => id !== orderId)
+        : [...prev, orderId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    const validOrderIds = results
+      .filter((r) => r.order)
+      .map((r) => r.id);
+
+    if (selectedOrders.length === validOrderIds.length) {
+      setSelectedOrders([]);
+    } else {
+      setSelectedOrders(validOrderIds);
+    }
+  };
+
+  const getSelectedOrdersData = () => {
+    return results
+      .filter((r) => r.order && selectedOrders.includes(r.id))
+      .map((r) => r.order!);
+  };
+
   const formatDateTime = (value?: string) =>
     value ? new Date(value).toLocaleString() : "-";
 
@@ -138,14 +191,29 @@ export default function BatchSearchPage() {
       <div className="bg-gray-50 min-h-screen">
         <div className="p-4 sm:p-6 lg:p-8">
           {/* Header */}
-          <div className="flex items-center space-x-4 mb-8">
-            <div className="w-12 h-12 bg-gradient-to-r from-[#070B34] to-[#070B34] rounded-2xl flex items-center justify-center">
-              <Search className="h-6 w-6 text-white" />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+            <div className="flex items-center space-x-4 mb-4 sm:mb-0">
+              <div className="w-12 h-12 bg-gradient-to-r from-[#070B34] to-[#070B34] rounded-2xl flex items-center justify-center">
+                <Search className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Batch Search</h1>
+                <p className="text-gray-600">Lookup many orders by ID at once.</p>
+                {selectedOrders.length > 0 && (
+                  <p className="mt-1 text-sm text-blue-600 font-medium">
+                    {selectedOrders.length} order(s) selected
+                  </p>
+                )}
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Batch Search</h1>
-              <p className="text-gray-600">Lookup many orders by ID at once.</p>
-            </div>
+            {selectedOrders.length > 0 && (
+              <div className="flex gap-2">
+                <OrdersExcelExport
+                  orders={getSelectedOrdersData()}
+                  title="Batch Search Orders"
+                />
+              </div>
+            )}
           </div>
 
           {/* Input Card */}
@@ -216,6 +284,18 @@ export default function BatchSearchPage() {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <input
+                          type="checkbox"
+                          checked={
+                            results.filter((r) => r.order).length > 0 &&
+                            selectedOrders.length ===
+                              results.filter((r) => r.order).length
+                          }
+                          onChange={handleSelectAll}
+                          className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                        />
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Order ID
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -247,6 +327,18 @@ export default function BatchSearchPage() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {results.map((r) => (
                       <tr key={r.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3">
+                          {r.order ? (
+                            <input
+                              type="checkbox"
+                              checked={selectedOrders.includes(r.id)}
+                              onChange={() => handleSelectOrder(r.id)}
+                              className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                            />
+                          ) : (
+                            <span className="text-gray-300">-</span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 font-mono text-sm text-gray-900">
                           {r.id}
                         </td>

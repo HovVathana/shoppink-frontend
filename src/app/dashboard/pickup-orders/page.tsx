@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/contexts/PermissionContext";
 import { usePageState } from "@/contexts/PageStateContext";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/Layout/DashboardLayout";
@@ -124,6 +125,7 @@ export default function PickupOrdersPage() {
   const [quickFunctionResult, setQuickFunctionResult] = useState<any>(null);
 
   const { isAuthenticated, loading: authLoading } = useAuth();
+  const { canEditOrders } = usePermissions();
   const { blacklistSet, normalizePhone } = useBlacklist();
   const { ordersPageState, updateOrdersPageState } = usePageState();
   const router = useRouter();
@@ -474,6 +476,14 @@ export default function PickupOrdersPage() {
     dateTo,
   ]);
 
+  // Reset to page 1 if current page exceeds total pages
+  useEffect(() => {
+    const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+    if (currentPage > totalPages && totalPages > 0) {
+      updateOrdersPageState({ currentPage: 1 });
+    }
+  }, [filteredOrders.length, itemsPerPage, currentPage, updateOrdersPageState]);
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push("/login");
@@ -575,17 +585,22 @@ export default function PickupOrdersPage() {
       toast.loading("Uploading proof image...");
       const response = await ordersAPI.uploadPickupProof(orderId, formData);
       
-      // Optimistic UI update: Update order with new proof URL
+      // Optimistic UI update: Update order with new proof URL and set state to COMPLETED
       setAllOrders((prevOrders) =>
         prevOrders.map((prevOrder) =>
           prevOrder.id === orderId
-            ? { ...prevOrder, paymentProofUrl: response.data.proofUrl }
+            ? {
+                ...prevOrder,
+                paymentProofUrl: response.data.proofUrl,
+                state: "COMPLETED",
+                completedAt: new Date().toISOString(),
+              }
             : prevOrder
         )
       );
 
       toast.dismiss();
-      toast.success("Proof image uploaded successfully");
+      toast.success("Proof uploaded and order marked as completed");
 
       // Clear the file input
       event.target.value = "";
@@ -1405,6 +1420,7 @@ export default function PickupOrdersPage() {
                               orderId={order.id}
                               isPrinted={order.isPrinted}
                               onPrintStatusChange={handlePrintStatusChange}
+                              canResetPrintStatus={canEditOrders()}
                             />
                           </td>
 

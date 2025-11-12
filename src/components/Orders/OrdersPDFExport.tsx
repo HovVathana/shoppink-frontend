@@ -373,19 +373,63 @@ const OrdersPDFDocument = ({
                     <Text style={[styles.bigText, styles.textBold]}>
                       {item.label}
                     </Text>
-                    <Text
-                      style={[
-                        styles.bigText,
-                        styles.textBold,
-                        styles.englishFont,
-                        order.isPaid && {
-                          textDecoration: "line-through",
-                          textDecorationColor: "#000",
-                        },
-                      ]}
-                    >
-                      {item.value}
-                    </Text>
+                    {order.isPaid ? (
+                      <View style={{ flexDirection: "row", alignItems: "center" }}>
+                        <View>
+                          <Text
+                            style={[
+                              styles.bigText,
+                              styles.textBold,
+                              styles.englishFont,
+                              {
+                                textDecoration: "line-through",
+                                textDecorationColor: "#000",
+                              },
+                            ]}
+                          >
+                            {item.value}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.bigText,
+                              styles.textBold,
+                              styles.englishFont,
+                              {
+                                textDecoration: "line-through",
+                                textDecorationColor: "#000",
+                                position: "absolute",
+                                top: 0.3,
+                                left: 0,
+                              },
+                            ]}
+                          >
+                            {item.value}
+                          </Text>
+                        </View>
+                        <Text
+                          style={[
+                            styles.englishFont,
+                            {
+                              fontSize: 10,
+                              fontWeight: "bold",
+                              marginLeft: 4,
+                            },
+                          ]}
+                        >
+                          PAID
+                        </Text>
+                      </View>
+                    ) : (
+                      <Text
+                        style={[
+                          styles.bigText,
+                          styles.textBold,
+                          styles.englishFont,
+                        ]}
+                      >
+                        {item.value}
+                      </Text>
+                    )}
                   </View>
                 ))}
               </View>

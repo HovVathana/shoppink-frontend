@@ -56,6 +56,7 @@ interface Product {
   imageUrl?: string;
   sku?: string;
   isActive: boolean;
+  note?: string;
   createdAt: string;
   updatedAt: string;
   hasOptions?: boolean;
@@ -215,6 +216,8 @@ export default function ProductsPage() {
   const [categories, setCategories] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editingNoteValue, setEditingNoteValue] = useState("");
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -314,6 +317,44 @@ export default function ProductsPage() {
       const message =
         error.response?.data?.message || "Failed to delete product";
       toast.error(message);
+    }
+  };
+
+  const handleNoteClick = (product: Product) => {
+    if (!canEditProducts()) return;
+    setEditingNoteId(product.id);
+    setEditingNoteValue(product.note || "");
+  };
+
+  const handleNoteSave = async (productId: string) => {
+    try {
+      await productsAPI.updateNote(productId, editingNoteValue);
+      // Update local state
+      setProducts((prev) =>
+        prev.map((p) =>
+          p.id === productId ? { ...p, note: editingNoteValue } : p
+        )
+      );
+      setEditingNoteId(null);
+      toast.success("Note updated successfully");
+    } catch (error: any) {
+      const message =
+        error.response?.data?.message || "Failed to update note";
+      toast.error(message);
+    }
+  };
+
+  const handleNoteCancel = () => {
+    setEditingNoteId(null);
+    setEditingNoteValue("");
+  };
+
+  const handleNoteKeyDown = (e: React.KeyboardEvent, productId: string) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleNoteSave(productId);
+    } else if (e.key === "Escape") {
+      handleNoteCancel();
     }
   };
 
@@ -503,6 +544,9 @@ export default function ProductsPage() {
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                         Status
                       </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Note
+                      </th>
                       <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
                         Actions
                       </th>
@@ -571,6 +615,32 @@ export default function ProductsPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {getStatusBadge(product)}
+                        </td>
+                        <td className="px-6 py-4 max-w-xs">
+                          {editingNoteId === product.id ? (
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type="text"
+                                value={editingNoteValue}
+                                onChange={(e) => setEditingNoteValue(e.target.value)}
+                                onKeyDown={(e) => handleNoteKeyDown(e, product.id)}
+                                onBlur={() => handleNoteSave(product.id)}
+                                autoFocus
+                                className="input-field text-sm py-1 px-2 w-full"
+                                placeholder="Enter note..."
+                              />
+                            </div>
+                          ) : (
+                            <div
+                              className={`text-sm text-gray-600 truncate cursor-pointer hover:bg-gray-100 rounded px-2 py-1 ${
+                                canEditProducts() ? "" : "cursor-default"
+                              }`}
+                              title={product.note || "Click to edit"}
+                              onClick={() => handleNoteClick(product)}
+                            >
+                              {product.note || "-"}
+                            </div>
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex justify-end space-x-2">

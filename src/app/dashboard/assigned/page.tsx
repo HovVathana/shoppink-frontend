@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/contexts/PermissionContext";
 import { usePageState } from "@/contexts/PageStateContext";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/Layout/DashboardLayout";
@@ -146,6 +147,7 @@ export default function AssignedOrdersPage() {
   const [showDuplicates, setShowDuplicates] = useState(false);
 
   const { isAuthenticated, loading: authLoading } = useAuth();
+  const { canEditOrders } = usePermissions();
   const { blacklistSet, normalizePhone } = useBlacklist();
   const { drivers, activeDrivers, refreshDrivers } = useDrivers();
   const { assignedPageState, updateAssignedPageState } = usePageState();
@@ -492,6 +494,14 @@ export default function AssignedOrdersPage() {
     dateFrom,
     dateTo,
   ]);
+
+  // Reset to page 1 if current page exceeds total pages
+  useEffect(() => {
+    const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+    if (currentPage > totalPages && totalPages > 0) {
+      updateAssignedPageState({ currentPage: 1 });
+    }
+  }, [filteredOrders.length, itemsPerPage, currentPage, updateAssignedPageState]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -1341,6 +1351,7 @@ export default function AssignedOrdersPage() {
                               orderId={order.id}
                               isPrinted={order.isPrinted}
                               onPrintStatusChange={refreshOrders}
+                              canResetPrintStatus={canEditOrders()}
                             />
                           </td>
 

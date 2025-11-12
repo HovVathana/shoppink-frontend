@@ -48,6 +48,7 @@ interface Product {
   imageUrl?: string;
   sku?: string;
   isActive: boolean;
+  note?: string;
   bannerText?: string;
   bannerColor?: string;
   bannerType?: string;
@@ -67,6 +68,7 @@ interface ProductForm {
   categoryId: string;
   imageUrl: string;
   isActive: boolean;
+  note: string;
   bannerText: string;
   bannerColor: string;
   bannerType: string;
@@ -126,6 +128,7 @@ export default function ProductModal({
           categoryId: product.categoryId || "",
           imageUrl: product.imageUrl || "",
           isActive: product.isActive,
+          note: product.note || "",
           bannerText: product.bannerText || "",
           bannerColor: product.bannerColor || "blue",
           bannerType: product.bannerType || "info",
@@ -148,6 +151,7 @@ export default function ProductModal({
           categoryId: "",
           imageUrl: "",
           isActive: true,
+          note: "",
           bannerText: "",
           bannerColor: "blue",
           bannerType: "info",
@@ -517,6 +521,18 @@ export default function ProductModal({
                     rows={3}
                     className="input-field mt-1"
                     placeholder="Enter product description"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Note
+                  </label>
+                  <input
+                    {...register("note")}
+                    type="text"
+                    className="input-field mt-1"
+                    placeholder="Small note for tracking (optional)"
                   />
                 </div>
 
