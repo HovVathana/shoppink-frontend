@@ -297,6 +297,9 @@ export const ordersAPI = {
         "Content-Type": "multipart/form-data",
       },
     }),
+
+  batchSearchByPhone: (phoneNumbers: string[]) =>
+    api.post("/orders/batch/phone", { phoneNumbers }),
 };
 
 // Blacklist Phones API with request deduplication and caching
