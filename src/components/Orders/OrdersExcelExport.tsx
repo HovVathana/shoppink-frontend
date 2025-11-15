@@ -139,14 +139,9 @@ export default function OrdersExcelExport({
       "Customer Phone": order.customerPhone,
       "Customer Location": `${order.customerLocation}, ${order.province}`,
       "Products": formatProductsList(order.orderItems),
-      "Subtotal Price": `$${order.subtotalPrice.toFixed(2)}`,
-      "Delivery Price": `$${order.deliveryPrice.toFixed(2)}`,
-      "Company Delivery Price": `$${order.companyDeliveryPrice.toFixed(2)}`,
       "Total Price": `$${order.totalPrice.toFixed(2)}`,
-      "Status": order.state,
-      "Created By": order.creator?.name || "N/A",
       "Driver": order.driver?.name || "Unassigned",
-      "Remarks": order.remark || "No remarks",
+      "Status": order.state,
     }));
 
     // Create a new workbook and add the data
@@ -162,14 +157,9 @@ export default function OrdersExcelExport({
       { wch: 15 }, // Customer Phone
       { wch: 30 }, // Customer Location
       { wch: 50 }, // Products
-      { wch: 12 }, // Subtotal Price
-      { wch: 12 }, // Delivery Price
-      { wch: 18 }, // Company Delivery Price
       { wch: 12 }, // Total Price
-      { wch: 10 }, // Status
-      { wch: 15 }, // Created By
       { wch: 15 }, // Driver
-      { wch: 30 }, // Remarks
+      { wch: 10 }, // Status
     ];
     ws["!cols"] = colWidths;
 
