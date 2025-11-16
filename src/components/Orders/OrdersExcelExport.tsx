@@ -139,6 +139,7 @@ export default function OrdersExcelExport({
       "Customer Phone": order.customerPhone,
       "Customer Location": `${order.customerLocation}, ${order.province}`,
       "Products": formatProductsList(order.orderItems),
+      "Company Delivery Price": `$${order.companyDeliveryPrice.toFixed(2)}`,
       "Total Price": `$${order.totalPrice.toFixed(2)}`,
       "Driver": order.driver?.name || "Unassigned",
       "Status": order.state,
@@ -158,6 +159,7 @@ export default function OrdersExcelExport({
       { wch: 30 }, // Customer Location
       { wch: 50 }, // Products
       { wch: 12 }, // Total Price
+      { wch: 18 }, // Company Delivery Price
       { wch: 15 }, // Driver
       { wch: 10 }, // Status
     ];
