@@ -57,33 +57,39 @@ interface OrdersExcelExportProps {
 // Helper function to format products list
 const formatProductsList = (orderItems: any[]): string => {
   if (!orderItems || orderItems.length === 0) return "";
-  
+
   return orderItems
     .map((item) => {
       let productText = `${item.product.name} (x${item.quantity})`;
-      
+
       // Add variant options if available
       if (item.optionDetails) {
         let options = item.optionDetails;
-        
+
         // Handle different data structures
-        if (item.optionDetails.selections && Array.isArray(item.optionDetails.selections)) {
+        if (
+          item.optionDetails.selections &&
+          Array.isArray(item.optionDetails.selections)
+        ) {
           options = item.optionDetails.selections;
         } else if (Array.isArray(item.optionDetails)) {
           options = item.optionDetails;
         }
-        
+
         if (Array.isArray(options) && options.length > 0) {
           const variantInfo = options
             .map((group: any) => {
-              if (!group.selectedOptions || !Array.isArray(group.selectedOptions)) {
+              if (
+                !group.selectedOptions ||
+                !Array.isArray(group.selectedOptions)
+              ) {
                 return null;
               }
               const selectedOptions = group.selectedOptions
                 .map((option: any) => option?.name || "")
                 .filter((name: string) => name.trim() !== "")
                 .join(", ");
-              
+
               if (selectedOptions) {
                 return `${group.groupName || "Option"}: ${selectedOptions}`;
               }
@@ -91,13 +97,13 @@ const formatProductsList = (orderItems: any[]): string => {
             })
             .filter((item: string | null) => item !== null)
             .join(" | ");
-          
+
           if (variantInfo) {
             productText += ` [${variantInfo}]`;
           }
         }
       }
-      
+
       return productText;
     })
     .join("; ");
@@ -137,12 +143,13 @@ export default function OrdersExcelExport({
       "Assigned Date": order.assignedAt ? formatDate(order.assignedAt) : "",
       "Customer Name": order.customerName,
       "Customer Phone": order.customerPhone,
-      "Customer Location": `${order.customerLocation}, ${order.province}`,
-      "Products": formatProductsList(order.orderItems),
-      "Company Delivery Price": `$${order.companyDeliveryPrice.toFixed(2)}`,
-      "Total Price": `$${order.totalPrice.toFixed(2)}`,
-      "Driver": order.driver?.name || "Unassigned",
-      "Status": order.state,
+      "Customer Location": order.customerLocation,
+      "Province/Phnom Penh": order.province,
+      Products: formatProductsList(order.orderItems),
+      "Company Delivery Price": `${order.companyDeliveryPrice.toFixed(2)}`,
+      "Total Price": `${order.totalPrice.toFixed(2)}`,
+      Driver: order.driver?.name || "Unassigned",
+      Status: order.state,
     }));
 
     // Create a new workbook and add the data
@@ -157,9 +164,10 @@ export default function OrdersExcelExport({
       { wch: 20 }, // Customer Name
       { wch: 15 }, // Customer Phone
       { wch: 30 }, // Customer Location
+      { wch: 15 }, // Province/Phnom Penh
       { wch: 50 }, // Products
-      { wch: 12 }, // Total Price
       { wch: 18 }, // Company Delivery Price
+      { wch: 12 }, // Total Price
       { wch: 15 }, // Driver
       { wch: 10 }, // Status
     ];
@@ -173,11 +181,11 @@ export default function OrdersExcelExport({
     const data = new Blob([excelBuffer], {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8",
     });
-    
+
     const fileName = `${title.toLowerCase().replace(/\s+/g, "-")}-${
       new Date().toISOString().split("T")[0]
     }.xlsx`;
-    
+
     saveAs(data, fileName);
   };
 
