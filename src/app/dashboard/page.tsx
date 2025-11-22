@@ -140,6 +140,60 @@ export default function DashboardPage() {
   const router = useRouter();
 
   // Function to get date range based on selected period
+  // const getSalesReportDateRange = (period: string) => {
+  //   const now = new Date();
+  //   let startDate: Date;
+  //   let endDate: Date;
+
+  //   switch (period) {
+  //     case "current_day":
+  //       // Use UTC methods to avoid timezone issues
+  //       startDate = new Date(now);
+  //       startDate.setHours(0, 0, 0, 0);
+
+  //       endDate = new Date(now);
+  //       endDate.setHours(23, 59, 59, 999);
+  //       break;
+  //     case "current_month":
+  //       startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+  //       // Get the last day of current month and set to end of day
+  //       endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  //       endDate.setHours(23, 59, 59, 999);
+  //       break;
+  //     case "last_month":
+  //       startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  //       endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+  //       endDate.setHours(23, 59, 59, 999);
+  //       break;
+  //     case "last_3_months":
+  //       startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+  //       endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  //       endDate.setHours(23, 59, 59, 999);
+  //       break;
+  //     case "last_6_months":
+  //       startDate = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+  //       endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  //       endDate.setHours(23, 59, 59, 999);
+  //       break;
+  //     case "current_year":
+  //       startDate = new Date(now.getFullYear(), 0, 1);
+  //       endDate = new Date(now.getFullYear(), 11, 31);
+  //       endDate.setHours(23, 59, 59, 999);
+  //       break;
+  //     default:
+  //       // Default to current day if period is unrecognized
+  //       startDate = new Date(now);
+  //       startDate.setHours(0, 0, 0, 0);
+
+  //       endDate = new Date(now);
+  //       endDate.setHours(23, 59, 59, 999);
+  //   }
+
+  //   return {
+  //     from: startDate.toISOString().split("T")[0],
+  //     to: endDate.toISOString().split("T")[0],
+  //   };
+  // };
   const getSalesReportDateRange = (period: string) => {
     const now = new Date();
     let startDate: Date;
@@ -147,41 +201,44 @@ export default function DashboardPage() {
 
     switch (period) {
       case "current_day":
-        // Use UTC methods to avoid timezone issues
         startDate = new Date(now);
         startDate.setHours(0, 0, 0, 0);
 
         endDate = new Date(now);
         endDate.setHours(23, 59, 59, 999);
         break;
+
       case "current_month":
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        // Get the last day of current month and set to end of day
         endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
         endDate.setHours(23, 59, 59, 999);
         break;
+
       case "last_month":
         startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         endDate = new Date(now.getFullYear(), now.getMonth(), 0);
         endDate.setHours(23, 59, 59, 999);
         break;
+
       case "last_3_months":
         startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
         endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
         endDate.setHours(23, 59, 59, 999);
         break;
+
       case "last_6_months":
         startDate = new Date(now.getFullYear(), now.getMonth() - 5, 1);
         endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
         endDate.setHours(23, 59, 59, 999);
         break;
+
       case "current_year":
         startDate = new Date(now.getFullYear(), 0, 1);
         endDate = new Date(now.getFullYear(), 11, 31);
         endDate.setHours(23, 59, 59, 999);
         break;
+
       default:
-        // Default to current day if period is unrecognized
         startDate = new Date(now);
         startDate.setHours(0, 0, 0, 0);
 
@@ -226,7 +283,7 @@ export default function DashboardPage() {
         }
 
         const response = await ordersAPI.getAll({
-          limit: 5000,
+          limit: 10000,
           dateFrom: dateRange.from,
           dateTo: dateRange.to,
           allSources: true,
@@ -414,7 +471,7 @@ export default function DashboardPage() {
       // Fetch orders and drivers - get ALL data for statistics
       const [ordersResponse, driversResponse] = await Promise.all([
         ordersAPI.getAll({
-          limit: 5000,
+          limit: 10000,
           dateFrom,
           dateTo,
           allSources: true, // Get orders from all sources (ADMIN + CUSTOMER) for dashboard stats

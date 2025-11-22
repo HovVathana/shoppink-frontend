@@ -172,7 +172,7 @@ export default function PickupOrdersPage() {
         const params: any = {
           dateFrom,
           dateTo,
-          limit: 5000, // Fetch all orders within date range
+          limit: 10000, // Fetch all orders within date range
           orderSource: "PICKUP", // Only fetch PICKUP orders
         };
         const response = await ordersAPI.getAll(params, forceRefresh); // Pass bustCache to API
@@ -347,16 +347,9 @@ export default function PickupOrdersPage() {
 
   // Quick function: Find orders by status
   const findOrdersByStatus = () => {
-    const status = prompt(
-      "Enter status (PLACED, COMPLETED):"
-    )?.toUpperCase();
-    if (
-      !status ||
-      !["PLACED", "COMPLETED"].includes(status)
-    ) {
-      toast.error(
-        "Invalid status. Use: PLACED or COMPLETED"
-      );
+    const status = prompt("Enter status (PLACED, COMPLETED):")?.toUpperCase();
+    if (!status || !["PLACED", "COMPLETED"].includes(status)) {
+      toast.error("Invalid status. Use: PLACED or COMPLETED");
       return;
     }
 
@@ -511,7 +504,6 @@ export default function PickupOrdersPage() {
     }
   };
 
-
   const getStateInfo = (state: string) => {
     return ORDER_STATES.find((s) => s.value === state) || ORDER_STATES[0];
   };
@@ -584,7 +576,7 @@ export default function PickupOrdersPage() {
     try {
       toast.loading("Uploading proof image...");
       const response = await ordersAPI.uploadPickupProof(orderId, formData);
-      
+
       // Optimistic UI update: Update order with new proof URL and set state to COMPLETED
       setAllOrders((prevOrders) =>
         prevOrders.map((prevOrder) =>
@@ -812,7 +804,9 @@ export default function PickupOrdersPage() {
                 <ShoppingCart className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Pickup Orders</h1>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  Pickup Orders
+                </h1>
                 <p className="text-gray-600">
                   Manage pickup orders for walk-in customers
                 </p>

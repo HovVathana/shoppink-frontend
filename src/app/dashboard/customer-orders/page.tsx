@@ -148,7 +148,11 @@ const ORDER_STATES = [
     color: "bg-green-100 text-green-800",
   },
   { value: "RETURNED", label: "Returned", color: "bg-red-100 text-red-800" },
-  { value: "CANCELLED", label: "Cancelled", color: "bg-gray-100 text-gray-800" },
+  {
+    value: "CANCELLED",
+    label: "Cancelled",
+    color: "bg-gray-100 text-gray-800",
+  },
 ];
 
 export default function CustomerOrdersPage() {
@@ -210,7 +214,7 @@ export default function CustomerOrdersPage() {
         const params: any = {
           dateFrom,
           dateTo,
-          limit: 5000, // Fetch all orders within date range
+          limit: 10000, // Fetch all orders within date range
         };
         const response = await customerOrdersAPI.getAll(params);
         const orders = response.data.orders || [];
@@ -323,7 +327,12 @@ export default function CustomerOrdersPage() {
     if (currentPage > totalPages && totalPages > 0) {
       updateCustomerOrdersPageState({ currentPage: 1 });
     }
-  }, [filteredOrders.length, itemsPerPage, currentPage, updateCustomerOrdersPageState]);
+  }, [
+    filteredOrders.length,
+    itemsPerPage,
+    currentPage,
+    updateCustomerOrdersPageState,
+  ]);
 
   const handleSort = (field: string) => {
     const newDirection =

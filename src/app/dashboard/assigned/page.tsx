@@ -191,7 +191,7 @@ export default function AssignedOrdersPage() {
         const params: any = {
           dateFrom,
           dateTo,
-          limit: 5000, // Fetch all orders within date range
+          limit: 10000, // Fetch all orders within date range
           assignedOnly: true, // Include all order sources for assigned orders
         };
         const response = await ordersAPI.getAll(params);
@@ -501,7 +501,12 @@ export default function AssignedOrdersPage() {
     if (currentPage > totalPages && totalPages > 0) {
       updateAssignedPageState({ currentPage: 1 });
     }
-  }, [filteredOrders.length, itemsPerPage, currentPage, updateAssignedPageState]);
+  }, [
+    filteredOrders.length,
+    itemsPerPage,
+    currentPage,
+    updateAssignedPageState,
+  ]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {

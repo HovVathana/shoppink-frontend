@@ -184,7 +184,7 @@ export default function OrdersPage() {
         const params: any = {
           dateFrom,
           dateTo,
-          limit: 5000, // Fetch all orders within date range
+          limit: 10000, // Fetch all orders within date range
         };
         const response = await ordersAPI.getAll(params, forceRefresh); // Pass bustCache to API
         // Filter to only show ADMIN orders (exclude CUSTOMER and PICKUP)
