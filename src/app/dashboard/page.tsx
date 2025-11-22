@@ -148,9 +148,11 @@ export default function DashboardPage() {
     switch (period) {
       case "current_day":
         // Use UTC methods to avoid timezone issues
-        const todayStr = now.toISOString().split("T")[0]; // Get YYYY-MM-DD format
-        startDate = new Date(todayStr + "T00:00:00.000Z");
-        endDate = new Date(todayStr + "T23:59:59.999Z");
+        startDate = new Date(now);
+        startDate.setHours(0, 0, 0, 0);
+
+        endDate = new Date(now);
+        endDate.setHours(23, 59, 59, 999);
         break;
       case "current_month":
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -180,9 +182,11 @@ export default function DashboardPage() {
         break;
       default:
         // Default to current day if period is unrecognized
-        const defaultTodayStr = now.toISOString().split("T")[0];
-        startDate = new Date(defaultTodayStr + "T00:00:00.000Z");
-        endDate = new Date(defaultTodayStr + "T23:59:59.999Z");
+        startDate = new Date(now);
+        startDate.setHours(0, 0, 0, 0);
+
+        endDate = new Date(now);
+        endDate.setHours(23, 59, 59, 999);
     }
 
     return {
