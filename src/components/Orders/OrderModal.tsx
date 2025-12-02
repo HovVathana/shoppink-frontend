@@ -197,12 +197,18 @@ export default function OrderModal({
         const formData = {
           customerName: order.customerName || "",
           customerPhone: order.customerPhone || "",
-          customerLocation: isPickupOrder ? "Pickup" : (order.customerLocation || ""),
-          province: isPickupOrder ? "Phnom Penh" : (order.province || "Phnom Penh"),
+          customerLocation: isPickupOrder
+            ? "Pickup"
+            : order.customerLocation || "",
+          province: isPickupOrder
+            ? "Phnom Penh"
+            : order.province || "Phnom Penh",
           remark: order.remark || "",
           driverId: order.driverId || order.driver?.id || "",
-          deliveryPrice: isPickupOrder ? 0 : (Number(order.deliveryPrice) || 0.0),
-          companyDeliveryPrice: isPickupOrder ? 0 : (Number(order.companyDeliveryPrice) || 1.2),
+          deliveryPrice: isPickupOrder ? 0 : Number(order.deliveryPrice) || 0.0,
+          companyDeliveryPrice: isPickupOrder
+            ? 0
+            : Number(order.companyDeliveryPrice) || 1.2,
           totalPrice: Number(order.totalPrice) || 0,
           isPaid: !!order.isPaid,
           products: orderProducts,
@@ -303,7 +309,15 @@ export default function OrderModal({
         setVariantsByProduct({}); // Clear variants cache
       }
     }
-  }, [isOpen, isEditing, order, products.length, drivers.length, reset, isPickupOrder]);
+  }, [
+    isOpen,
+    isEditing,
+    order,
+    products.length,
+    drivers.length,
+    reset,
+    isPickupOrder,
+  ]);
 
   // Additional effect to restore options when products are loaded and form is ready
   useEffect(() => {
@@ -1099,7 +1113,9 @@ export default function OrderModal({
                         </label>
                         <input
                           {...register("customerLocation", {
-                            required: !isPickupOrder ? "Customer location is required" : false,
+                            required: !isPickupOrder
+                              ? "Customer location is required"
+                              : false,
                           })}
                           type="text"
                           className="input-field mt-1"
@@ -1118,7 +1134,9 @@ export default function OrderModal({
                         </label>
                         <select
                           {...register("province", {
-                            required: !isPickupOrder ? "Province is required" : false,
+                            required: !isPickupOrder
+                              ? "Province is required"
+                              : false,
                           })}
                           className="input-field mt-1"
                         >
@@ -1550,21 +1568,24 @@ export default function OrderModal({
                                                           <span>
                                                             {option.name}
                                                           </span>
-                                                          {isLastGroup && (
-                                                            <span
-                                                              className={`ml-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                                                                availableStock ===
-                                                                0
-                                                                  ? "bg-red-100 text-red-800"
-                                                                  : availableStock <=
-                                                                    10
-                                                                  ? "bg-yellow-100 text-yellow-800"
-                                                                  : "bg-green-100 text-green-800"
-                                                              }`}
-                                                            >
-                                                              {availableStock}
-                                                            </span>
-                                                          )}
+
+                                                          {user?.role.toUpperCase() ==
+                                                            "ADMIN" &&
+                                                            isLastGroup && (
+                                                              <span
+                                                                className={`ml-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                                                                  availableStock ===
+                                                                  0
+                                                                    ? "bg-red-100 text-red-800"
+                                                                    : availableStock <=
+                                                                      10
+                                                                    ? "bg-yellow-100 text-yellow-800"
+                                                                    : "bg-green-100 text-green-800"
+                                                                }`}
+                                                              >
+                                                                {availableStock}
+                                                              </span>
+                                                            )}
                                                         </p>
                                                         {isOutOfStock && (
                                                           <p className="text-red-600">
@@ -1634,7 +1655,11 @@ export default function OrderModal({
                   </h4>
                   <div
                     className={`grid grid-cols-1 ${
-                      isPickupOrder ? "md:grid-cols-1" : isAdmin ? "md:grid-cols-3" : "md:grid-cols-2"
+                      isPickupOrder
+                        ? "md:grid-cols-1"
+                        : isAdmin
+                        ? "md:grid-cols-3"
+                        : "md:grid-cols-2"
                     } gap-4`}
                   >
                     {!isPickupOrder && (
@@ -1644,8 +1669,13 @@ export default function OrderModal({
                         </label>
                         <input
                           {...register("deliveryPrice", {
-                            required: !isPickupOrder ? "Delivery price is required" : false,
-                            min: { value: 0, message: "Delivery price must be at least 0" },
+                            required: !isPickupOrder
+                              ? "Delivery price is required"
+                              : false,
+                            min: {
+                              value: 0,
+                              message: "Delivery price must be at least 0",
+                            },
                           })}
                           type="number"
                           step="0.01"

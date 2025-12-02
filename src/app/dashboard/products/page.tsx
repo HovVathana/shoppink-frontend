@@ -207,6 +207,7 @@ const ProductStockTree: React.FC<{ productId: string }> = ({ productId }) => {
 };
 
 export default function ProductsPage() {
+  const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -338,8 +339,7 @@ export default function ProductsPage() {
       setEditingNoteId(null);
       toast.success("Note updated successfully");
     } catch (error: any) {
-      const message =
-        error.response?.data?.message || "Failed to update note";
+      const message = error.response?.data?.message || "Failed to update note";
       toast.error(message);
     }
   };
@@ -457,7 +457,9 @@ export default function ProductsPage() {
                   className="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#070B34] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                   title="Refresh products"
                 >
-                  <RotateCcw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                  <RotateCcw
+                    className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+                  />
                   <span className="text-sm font-medium text-gray-700">
                     Refresh
                   </span>
@@ -532,9 +534,11 @@ export default function ProductsPage() {
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                         Price
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                        Stock
-                      </th>
+                      {user?.role.toUpperCase() == "ADMIN" && (
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                          Stock
+                        </th>
+                      )}
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                         Weight
                       </th>
@@ -587,25 +591,27 @@ export default function ProductsPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           ${product.price.toFixed(2)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap  text-sm text-gray-900">
-                          {product.hasOptions && product.optionGroups ? (
-                            <ProductStockTree productId={product.id} />
-                          ) : (
-                            <div className="flex items-center justify-center">
-                              <div
-                                className={`font-bold text-lg px-4 py-2 rounded-lg ${
-                                  product.quantity <= 5
-                                    ? "bg-red-100 text-red-700 border border-red-200"
-                                    : product.quantity <= 10
-                                    ? "bg-yellow-100 text-yellow-700 border border-yellow-200"
-                                    : "bg-green-100 text-green-700 border border-green-200"
-                                }`}
-                              >
-                                {product.quantity}
+                        {user?.role.toUpperCase() == "ADMIN" && (
+                          <td className="px-6 py-4 whitespace-nowrap  text-sm text-gray-900">
+                            {product.hasOptions && product.optionGroups ? (
+                              <ProductStockTree productId={product.id} />
+                            ) : (
+                              <div className="flex items-center justify-center">
+                                <div
+                                  className={`font-bold text-lg px-4 py-2 rounded-lg ${
+                                    product.quantity <= 5
+                                      ? "bg-red-100 text-red-700 border border-red-200"
+                                      : product.quantity <= 10
+                                      ? "bg-yellow-100 text-yellow-700 border border-yellow-200"
+                                      : "bg-green-100 text-green-700 border border-green-200"
+                                  }`}
+                                >
+                                  {product.quantity}
+                                </div>
                               </div>
-                            </div>
-                          )}
-                        </td>
+                            )}
+                          </td>
+                        )}
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {product.weight}kg
                         </td>
@@ -622,8 +628,12 @@ export default function ProductsPage() {
                               <input
                                 type="text"
                                 value={editingNoteValue}
-                                onChange={(e) => setEditingNoteValue(e.target.value)}
-                                onKeyDown={(e) => handleNoteKeyDown(e, product.id)}
+                                onChange={(e) =>
+                                  setEditingNoteValue(e.target.value)
+                                }
+                                onKeyDown={(e) =>
+                                  handleNoteKeyDown(e, product.id)
+                                }
                                 onBlur={() => handleNoteSave(product.id)}
                                 autoFocus
                                 className="input-field text-sm py-1 px-2 w-full"
