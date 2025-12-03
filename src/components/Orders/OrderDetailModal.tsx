@@ -206,9 +206,9 @@ export default function OrderDetailModal({
                             {opts}
                           </div>
                         )}
-                        <div className="text-[11px] text-gray-500">
+                        {/* <div className="text-[11px] text-gray-500">
                           ${item.price.toFixed(2)} / unit
-                        </div>
+                        </div> */}
                       </div>
                       <div className="w-20 px-2 py-2 flex items-center justify-center">
                         {item.quantity > 1 ? (
