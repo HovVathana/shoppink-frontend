@@ -194,6 +194,74 @@ export default function DashboardPage() {
   //     to: endDate.toISOString().split("T")[0],
   //   };
   // };
+  // const getSalesReportDateRange = (period: string) => {
+  //   const now = new Date();
+  //   let startDate: Date;
+  //   let endDate: Date;
+
+  //   switch (period) {
+  //     case "current_day":
+  //       startDate = new Date(now);
+  //       startDate.setHours(0, 0, 0, 0);
+
+  //       endDate = new Date(now);
+  //       endDate.setHours(23, 59, 59, 999);
+  //       break;
+
+  //     case "current_month":
+  //       startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+  //       endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  //       endDate.setHours(23, 59, 59, 999);
+  //       break;
+
+  //     case "last_month":
+  //       startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  //       endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+  //       endDate.setHours(23, 59, 59, 999);
+  //       break;
+
+  //     case "last_3_months":
+  //       startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+  //       endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  //       endDate.setHours(23, 59, 59, 999);
+  //       break;
+
+  //     case "last_6_months":
+  //       startDate = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+  //       endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  //       endDate.setHours(23, 59, 59, 999);
+  //       break;
+
+  //     case "current_year":
+  //       startDate = new Date(now.getFullYear(), 0, 1);
+  //       endDate = new Date(now.getFullYear(), 11, 31);
+  //       endDate.setHours(23, 59, 59, 999);
+  //       break;
+
+  //     default:
+  //       startDate = new Date(now);
+  //       startDate.setHours(0, 0, 0, 0);
+
+  //       endDate = new Date(now);
+  //       endDate.setHours(23, 59, 59, 999);
+  //   }
+
+  //   console.log(startDate);
+  //   console.log(startDate.toISOString().split("T")[0]);
+
+  //   return {
+  //     from: startDate.toISOString().split("T")[0],
+  //     to: endDate.toISOString().split("T")[0],
+  //   };
+  // };
+
+  const formatLocalDate = (date: Date) => {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
   const getSalesReportDateRange = (period: string) => {
     const now = new Date();
     let startDate: Date;
@@ -246,9 +314,12 @@ export default function DashboardPage() {
         endDate.setHours(23, 59, 59, 999);
     }
 
+    console.log(startDate); // Thu Dec 04 2025 ...
+    console.log(formatLocalDate(startDate)); // 2025-12-04 (local date)
+
     return {
-      from: startDate.toISOString().split("T")[0],
-      to: endDate.toISOString().split("T")[0],
+      from: formatLocalDate(startDate),
+      to: formatLocalDate(endDate),
     };
   };
 
@@ -266,6 +337,8 @@ export default function DashboardPage() {
       setIsLoadingSalesData(true);
       try {
         const dateRange = getSalesReportDateRange(salesReportPeriod);
+
+        console.log(dateRange.from);
 
         // Check cache first - include actual date range in cache key to ensure fresh data when dates change
         const cacheKey = `sales-report-${salesReportPeriod}-${dateRange.from}-${dateRange.to}`;
@@ -345,6 +418,7 @@ export default function DashboardPage() {
           });
         });
 
+        console.log(productSalesMap);
         const topProductsData = Array.from(productSalesMap.values()).sort(
           (a, b) => b.quantity - a.quantity
         );
