@@ -314,9 +314,6 @@ export default function DashboardPage() {
         endDate.setHours(23, 59, 59, 999);
     }
 
-    console.log(startDate); // Thu Dec 04 2025 ...
-    console.log(formatLocalDate(startDate)); // 2025-12-04 (local date)
-
     return {
       from: formatLocalDate(startDate),
       to: formatLocalDate(endDate),
@@ -397,30 +394,68 @@ export default function DashboardPage() {
 
         // Calculate top selling products
         const productSalesMap = new Map();
+        // orders.forEach((order: any) => {
+        //   order.orderItems?.forEach((item: any) => {
+        //     const productId = item.product.id;
+        //     const productName = item.product.name;
+        //     const quantity = item.quantity;
+
+        //     if (productSalesMap.has(productId)) {
+        //       productSalesMap.set(productId, {
+        //         ...productSalesMap.get(productId),
+        //         quantity: productSalesMap.get(productId).quantity + quantity,
+        //       });
+        //     } else {
+        //       productSalesMap.set(productId, {
+        //         id: productId,
+        //         name: productName,
+        //         quantity: quantity,
+        //       });
+        //     }
+        //   });
+        // });
         orders.forEach((order: any) => {
           order.orderItems?.forEach((item: any) => {
             const productId = item.product.id;
             const productName = item.product.name;
             const quantity = item.quantity;
 
-            if (productSalesMap.has(productId)) {
+            // Build option label
+            let optionLabel = "No option";
+            if (item.optionDetails?.selections?.length > 0) {
+              optionLabel = item.optionDetails.selections
+                .map((sel: any) =>
+                  sel.selectedOptions.map((o: any) => o.name).join(", ")
+                )
+                .join(" / ");
+            }
+
+            if (!productSalesMap.has(productId)) {
               productSalesMap.set(productId, {
-                ...productSalesMap.get(productId),
-                quantity: productSalesMap.get(productId).quantity + quantity,
-              });
-            } else {
-              productSalesMap.set(productId, {
-                id: productId,
+                productId,
                 name: productName,
-                quantity: quantity,
+                totalQuantity: 0,
+                options: new Map(),
               });
             }
+
+            const productEntry = productSalesMap.get(productId);
+            productEntry.totalQuantity += quantity;
+
+            // Track per-option
+            const optionKey = optionLabel;
+            productEntry.options.set(
+              optionKey,
+              (productEntry.options.get(optionKey) || 0) + quantity
+            );
           });
         });
-
         console.log(productSalesMap);
+        // const topProductsData = Array.from(productSalesMap.values()).sort(
+        //   (a, b) => b.quantity - a.quantity
+        // );
         const topProductsData = Array.from(productSalesMap.values()).sort(
-          (a, b) => b.quantity - a.quantity
+          (a, b) => b.totalQuantity - a.totalQuantity
         );
 
         // Calculate status distribution
@@ -1546,7 +1581,7 @@ export default function DashboardPage() {
                   <option value="current_year">Current Year</option>
                 </select>
               </div>
-              <div className="space-y-3">
+              {/* <div className="space-y-3">
                 {topProducts.length > 0 ? (
                   topProducts.map((product, index) => (
                     <div
@@ -1572,6 +1607,58 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   ))
+                ) : (
+                  <p className="text-gray-500 text-center py-4">
+                    No sales data available for this period
+                  </p>
+                )}
+              </div> */}
+
+              <div className="space-y-3">
+                {topProducts.length > 0 ? (
+                  topProducts.map((product, index) => {
+                    const filteredOptions = Array.from(
+                      product.options.entries()
+                    ).filter(([label]) => label !== "No option");
+                    return (
+                      <div
+                        key={product.productId}
+                        className="p-4 bg-gray-50 rounded-lg"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                              <span className="text-sm font-semibold text-blue-600">
+                                {index + 1}
+                              </span>
+                            </div>
+                            <p className="text-sm font-medium text-gray-900">
+                              {product.name}
+                            </p>
+                          </div>
+
+                          <p className="text-sm font-semibold text-gray-900">
+                            {product.totalQuantity} sold
+                          </p>
+                        </div>
+
+                        {/* Options */}
+                        {filteredOptions.length > 0 && (
+                          <div className="ml-12 space-y-1">
+                            {filteredOptions.map(([label, qty]) => (
+                              <p
+                                key={label}
+                                className="text-xs text-gray-600 flex justify-between"
+                              >
+                                <span>- {label}</span>
+                                <span>{qty}</span>
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
                 ) : (
                   <p className="text-gray-500 text-center py-4">
                     No sales data available for this period
