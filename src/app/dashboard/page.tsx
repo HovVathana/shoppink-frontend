@@ -1617,8 +1617,15 @@ export default function DashboardPage() {
               <div className="space-y-3">
                 {topProducts.length > 0 ? (
                   topProducts.map((product, index) => {
+                    // Safely read options
+                    const options =
+                      product.options instanceof Map
+                        ? product.options
+                        : new Map();
+
+                    // Filter out "No option"
                     const filteredOptions = Array.from(
-                      product.options.entries()
+                      options.entries()
                     ).filter(([label]) => label !== "No option");
                     return (
                       <div
