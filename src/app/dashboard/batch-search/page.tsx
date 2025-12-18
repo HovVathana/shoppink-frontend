@@ -709,6 +709,46 @@ export default function BatchSearchPage() {
                             <div className="text-sm font-medium text-gray-900 mb-3">
                               {order.orderItems.length} item(s)
                             </div>
+                            <div className="space-y-3">
+                              {order.orderItems.map((item) => (
+                                <div
+                                  key={item.id}
+                                  className="flex items-start space-x-3 p-2 rounded-lg"
+                                >
+                                  {/* Product Image */}
+                                  <div className="flex-shrink-0">
+                                    <img
+                                      src={
+                                        item.product.imageUrl ||
+                                        "/placeholder-product.png"
+                                      }
+                                      alt={item.product.name}
+                                      className="w-12 h-12 object-cover rounded-lg border border-gray-200"
+                                      onError={(e) => {
+                                        e.currentTarget.src =
+                                          "/placeholder-product.png";
+                                      }}
+                                    />
+                                  </div>
+
+                                  {/* Product Details */}
+                                  <div className="flex-1 min-w-0 pr-10">
+                                    <div className="flex items-center justify-between">
+                                      <h4 className="text-sm font-medium text-gray-900 truncate">
+                                        {item.product.name}
+                                      </h4>
+                                      <span className="text-sm font-medium text-gray-600 ml-2">
+                                        ×{item.quantity}
+                                      </span>
+                                    </div>
+                                    <div className="text-xs text-gray-600 mt-1">
+                                      ${item.price.toFixed(2)} each
+                                    </div>
+                                    {renderOptionDetails(item.optionDetails)}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </td>
 
                           <td className="px-4 py-4 whitespace-nowrap">
