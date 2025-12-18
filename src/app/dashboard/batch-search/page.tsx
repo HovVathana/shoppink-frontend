@@ -144,6 +144,62 @@ export default function BatchSearchPage() {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
 
+  const [sortField, setSortField] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+
+  const handleSort = (field: string) => {
+    const newDirection =
+      sortField === field && sortDirection === "asc" ? "desc" : "asc";
+
+    setSortField(field);
+    setSortDirection(newDirection);
+  };
+
+  const sortedResults = useMemo(() => {
+    if (!sortField) return results;
+
+    const withOrder = results.filter((r) => r.order);
+    const withoutOrder = results.filter((r) => !r.order);
+
+    const dir = sortDirection === "asc" ? 1 : -1;
+
+    withOrder.sort((a, b) => {
+      const oa = a.order!;
+      const ob = b.order!;
+
+      switch (sortField) {
+        case "id":
+          return oa.id.localeCompare(ob.id) * dir;
+
+        case "orderAt":
+          return (
+            (new Date(oa.orderAt).getTime() - new Date(ob.orderAt).getTime()) *
+            dir
+          );
+
+        case "customerName":
+          return (
+            (oa.customerName || "").localeCompare(ob.customerName || "") * dir
+          );
+
+        case "province":
+          return (oa.province || "").localeCompare(ob.province || "") * dir;
+
+        case "totalPrice":
+          return (oa.totalPrice - ob.totalPrice) * dir;
+
+        case "state":
+          return oa.state.localeCompare(ob.state) * dir;
+
+        default:
+          return 0;
+      }
+    });
+
+    // Keep error rows visible (on top)
+    return [...withoutOrder, ...withOrder];
+  }, [results, sortField, sortDirection]);
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push("/login");
@@ -483,27 +539,95 @@ export default function BatchSearchPage() {
                           className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                         />
                       </th>
-                      <th className="lg:sticky left-10 z-20 px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider bg-gray-50 border-r border-gray-200 shadow-[2px_0_4px_rgba(0,0,0,0.1)]">
-                        Order ID
+
+                      <th
+                        className="lg:sticky left-10 z-20 px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 bg-gray-50 border-r border-gray-200 shadow-[2px_0_4px_rgba(0,0,0,0.1)]"
+                        onClick={() => handleSort("id")}
+                      >
+                        <div className="flex items-center">
+                          Order ID
+                          {sortField === "id" && (
+                            <span className="ml-1">
+                              {sortDirection === "asc" ? "↑" : "↓"}
+                            </span>
+                          )}
+                        </div>
                       </th>
-                      <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider min-w-[150px]">
-                        Order Date
+
+                      <th
+                        className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider min-w-[150px] cursor-pointer hover:bg-gray-100"
+                        onClick={() => handleSort("orderAt")}
+                      >
+                        <div className="flex items-center">
+                          Order Date
+                          {sortField === "orderAt" && (
+                            <span className="ml-1">
+                              {sortDirection === "asc" ? "↑" : "↓"}
+                            </span>
+                          )}
+                        </div>
                       </th>
-                      <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                        Customer Info
+
+                      <th
+                        className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        onClick={() => handleSort("customerName")}
+                      >
+                        <div className="flex items-center">
+                          Customer Info
+                          {sortField === "customerName" && (
+                            <span className="ml-1">
+                              {sortDirection === "asc" ? "↑" : "↓"}
+                            </span>
+                          )}
+                        </div>
                       </th>
-                      <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                        Location
+
+                      <th
+                        className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        onClick={() => handleSort("province")}
+                      >
+                        <div className="flex items-center">
+                          Location
+                          {sortField === "province" && (
+                            <span className="ml-1">
+                              {sortDirection === "asc" ? "↑" : "↓"}
+                            </span>
+                          )}
+                        </div>
                       </th>
+
                       <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider min-w-[250px]">
                         Products
                       </th>
-                      <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                        Pricing
+
+                      <th
+                        className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        onClick={() => handleSort("totalPrice")}
+                      >
+                        <div className="flex items-center">
+                          Pricing
+                          {sortField === "totalPrice" && (
+                            <span className="ml-1">
+                              {sortDirection === "asc" ? "↑" : "↓"}
+                            </span>
+                          )}
+                        </div>
                       </th>
-                      <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                        Status
+
+                      <th
+                        className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        onClick={() => handleSort("state")}
+                      >
+                        <div className="flex items-center">
+                          Status
+                          {sortField === "state" && (
+                            <span className="ml-1">
+                              {sortDirection === "asc" ? "↑" : "↓"}
+                            </span>
+                          )}
+                        </div>
                       </th>
+
                       <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                         Created By
                       </th>
@@ -515,10 +639,10 @@ export default function BatchSearchPage() {
                       </th>
                     </tr>
                   </thead>
+
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {results.map((r) => {
+                    {sortedResults.map((r) => {
                       if (!r.order) {
-                        // Error row
                         return (
                           <tr key={r.id} className="bg-red-50">
                             <td className="sticky left-0 z-10 px-4 py-4 bg-red-50 border-r border-gray-200 shadow-[2px_0_4px_rgba(0,0,0,0.1)]">
@@ -546,7 +670,6 @@ export default function BatchSearchPage() {
                           key={order.id}
                           className="table-row group hover:bg-gray-50"
                         >
-                          {/* Checkbox - Sticky Column */}
                           <td className="sticky left-0 z-10 px-4 py-4 whitespace-nowrap bg-white group-hover:bg-gray-50 border-r border-gray-200 shadow-[2px_0_4px_rgba(0,0,0,0.1)]">
                             <input
                               type="checkbox"
@@ -556,108 +679,14 @@ export default function BatchSearchPage() {
                             />
                           </td>
 
-                          {/* Order ID - Sticky Column */}
-                          <td className="lg:sticky left-10 z-10 px-4 py-4 bg-white group-hover:bg-gray-50 border-r border-gray-200 shadow-[2px_0_4px_rgba(0,0,0,0.1)]">
-                            <button
-                              onClick={() => handleCopyOrderId(order.id)}
-                              className="flex items-center gap-2 font-mono text-sm text-[#070B34] hover:text-blue-600 transition-colors group whitespace-nowrap"
-                              title="Click to copy"
-                            >
-                              <span className="group-hover:underline">
-                                {order.id}
-                              </span>
-                              <Copy className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </button>
+                          <td className="lg:sticky left-10 z-10 px-4 py-4 whitespace-nowrap bg-white group-hover:bg-gray-50 border-r border-gray-200 shadow-[2px_0_4px_rgba(0,0,0,0.1)]">
+                            {order.id}
                           </td>
 
-                          {/* Order Date */}
                           <td className="px-4 py-4 min-w-[150px]">
-                            <div className="space-y-1">
-                              <div>
-                                <span className="text-xs font-medium text-gray-600">
-                                  Ordered:
-                                </span>
-                                <div className="text-sm text-gray-900">
-                                  {new Date(order.orderAt).toLocaleDateString(
-                                    "en-US",
-                                    {
-                                      month: "short",
-                                      day: "numeric",
-                                      year: "numeric",
-                                    }
-                                  )}
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  {new Date(order.orderAt).toLocaleTimeString()}
-                                </div>
-                              </div>
-                              {order.assignedAt && (
-                                <div>
-                                  <span className="text-xs font-medium text-blue-600">
-                                    Assigned:
-                                  </span>
-                                  <div className="text-sm text-gray-900">
-                                    {new Date(
-                                      order.assignedAt
-                                    ).toLocaleDateString("en-US", {
-                                      month: "short",
-                                      day: "numeric",
-                                      year: "numeric",
-                                    })}
-                                  </div>
-                                  <div className="text-xs text-gray-500">
-                                    {new Date(
-                                      order.assignedAt
-                                    ).toLocaleTimeString()}
-                                  </div>
-                                </div>
-                              )}
-                              {order.completedAt && (
-                                <div>
-                                  <span className="text-xs font-medium text-green-600">
-                                    Completed:
-                                  </span>
-                                  <div className="text-sm text-gray-900">
-                                    {new Date(
-                                      order.completedAt
-                                    ).toLocaleDateString("en-US", {
-                                      month: "short",
-                                      day: "numeric",
-                                      year: "numeric",
-                                    })}
-                                  </div>
-                                  <div className="text-xs text-gray-500">
-                                    {new Date(
-                                      order.completedAt
-                                    ).toLocaleTimeString()}
-                                  </div>
-                                </div>
-                              )}
-                              {order.returnedAt && (
-                                <div>
-                                  <span className="text-xs font-medium text-red-600">
-                                    Returned:
-                                  </span>
-                                  <div className="text-sm text-gray-900">
-                                    {new Date(
-                                      order.returnedAt
-                                    ).toLocaleDateString("en-US", {
-                                      month: "short",
-                                      day: "numeric",
-                                      year: "numeric",
-                                    })}
-                                  </div>
-                                  <div className="text-xs text-gray-500">
-                                    {new Date(
-                                      order.returnedAt
-                                    ).toLocaleTimeString()}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
+                            {new Date(order.orderAt).toLocaleString()}
                           </td>
 
-                          {/* Customer Info */}
                           <td className="px-4 py-4">
                             <div className="text-sm font-medium text-gray-900">
                               {order.customerName}
@@ -667,7 +696,6 @@ export default function BatchSearchPage() {
                             </div>
                           </td>
 
-                          {/* Location */}
                           <td className="px-4 py-4">
                             <div className="text-sm text-gray-900">
                               {order.province}
@@ -677,78 +705,16 @@ export default function BatchSearchPage() {
                             </div>
                           </td>
 
-                          {/* Products */}
                           <td className="px-4 py-6 min-w-[250px]">
                             <div className="text-sm font-medium text-gray-900 mb-3">
                               {order.orderItems.length} item(s)
                             </div>
-                            <div className="space-y-3">
-                              {order.orderItems.map((item) => (
-                                <div
-                                  key={item.id}
-                                  className="flex items-start space-x-3 p-2 rounded-lg"
-                                >
-                                  {/* Product Image */}
-                                  <div className="flex-shrink-0">
-                                    <img
-                                      src={
-                                        item.product.imageUrl ||
-                                        "/placeholder-product.png"
-                                      }
-                                      alt={item.product.name}
-                                      className="w-12 h-12 object-cover rounded-lg border border-gray-200"
-                                      onError={(e) => {
-                                        e.currentTarget.src =
-                                          "/placeholder-product.png";
-                                      }}
-                                    />
-                                  </div>
-
-                                  {/* Product Details */}
-                                  <div className="flex-1 min-w-0 pr-10">
-                                    <div className="flex items-center justify-between">
-                                      <h4 className="text-sm font-medium text-gray-900 truncate">
-                                        {item.product.name}
-                                      </h4>
-                                      <span className="text-sm font-medium text-gray-600 ml-2">
-                                        ×{item.quantity}
-                                      </span>
-                                    </div>
-                                    <div className="text-xs text-gray-600 mt-1">
-                                      ${item.price.toFixed(2)} each
-                                    </div>
-                                    {renderOptionDetails(item.optionDetails)}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
                           </td>
 
-                          {/* Pricing */}
                           <td className="px-4 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">
-                              Total: ${order.totalPrice.toFixed(2)}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              Subtotal: ${order.subtotalPrice.toFixed(2)}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              Delivery: ${order.deliveryPrice.toFixed(2)}
-                            </div>
-                            <div className="mt-1">
-                              <span
-                                className={`${
-                                  order.isPaid
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-gray-100 text-gray-700"
-                                } inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium`}
-                              >
-                                {order.isPaid ? "Paid" : "Unpaid"}
-                              </span>
-                            </div>
+                            ${order.totalPrice.toFixed(2)}
                           </td>
 
-                          {/* Status */}
                           <td className="px-4 py-4 whitespace-nowrap">
                             <span
                               className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${stateInfo.color}`}
@@ -757,41 +723,16 @@ export default function BatchSearchPage() {
                             </span>
                           </td>
 
-                          {/* Created By */}
                           <td className="px-4 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">
-                              {order.creator?.name || "N/A"}
-                            </div>
-                            {order.creator?.role && (
-                              <div className="text-xs text-gray-500">
-                                {order.creator.role}
-                              </div>
-                            )}
+                            {order.creator?.name || "N/A"}
                           </td>
 
-                          {/* Driver */}
                           <td className="px-4 py-4 whitespace-nowrap">
-                            {order.driver ? (
-                              <div>
-                                <div className="text-sm text-gray-900">
-                                  {order.driver.name}
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  {order.driver.phone}
-                                </div>
-                              </div>
-                            ) : (
-                              <span className="text-sm text-gray-500">
-                                Unassigned
-                              </span>
-                            )}
+                            {order.driver?.name || "Unassigned"}
                           </td>
 
-                          {/* Remarks */}
-                          <td className="px-4 py-4">
-                            <div className="text-sm text-gray-500">
-                              {order.remark || "No remarks"}
-                            </div>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            {order.remark || "No remarks"}
                           </td>
                         </tr>
                       );
