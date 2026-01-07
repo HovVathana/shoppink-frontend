@@ -13,17 +13,21 @@ interface PrintStatusCellProps {
   canResetPrintStatus?: boolean;
 }
 
-export default function PrintStatusCell({ 
-  orderId, 
-  isPrinted, 
+export default function PrintStatusCell({
+  orderId,
+  isPrinted,
   onPrintStatusChange,
-  canResetPrintStatus = true // Default to true for backward compatibility
+  canResetPrintStatus = true, // Default to true for backward compatibility
 }: PrintStatusCellProps) {
   const [isResetting, setIsResetting] = useState(false);
 
   const handleResetPrintStatus = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent triggering copy to clipboard
-    if (!confirm("Are you sure you want to reset the print status for this order?")) {
+    if (
+      !confirm(
+        "Are you sure you want to reset the print status for this order?"
+      )
+    ) {
       return;
     }
 
@@ -45,27 +49,22 @@ export default function PrintStatusCell({
   return (
     <div className="flex items-center justify-between">
       <button
-        onClick={() =>
-          copyToClipboard(
-            orderId,
-            `Order ID ${orderId} copied!`
-          )
-        }
+        onClick={() => copyToClipboard(orderId, `Order ID ${orderId} copied!`)}
         className="text-left hover:bg-blue-50 rounded px-2 py-1 transition-colors duration-200 flex-1"
         title="Click to copy order ID"
       >
         <div className="text-sm font-medium text-blue-600 hover:text-blue-800">
           {formatOrderIdForDisplay(orderId)}
         </div>
-        <div className="text-xs text-gray-500">
-          Click to copy
-        </div>
+        <div className="text-xs text-gray-500">Click to copy</div>
         {/* Print Status Indicator - New line */}
         <div className="flex items-center space-x-1 mt-1">
           {isPrinted ? (
             <>
               <Printer className="h-3 w-3 text-green-600" />
-              <span className="text-xs text-green-600 font-medium">Printed</span>
+              <span className="text-xs text-green-600 font-medium">
+                Printed
+              </span>
             </>
           ) : (
             <>
@@ -75,16 +74,19 @@ export default function PrintStatusCell({
           )}
         </div>
       </button>
-      
+
       {/* Reset Button - Only show if order is printed and user has permission */}
-      {isPrinted && canResetPrintStatus && (
+      {/* {isPrinted && canResetPrintStatus && ( */}
+      {isPrinted && (
         <button
           onClick={handleResetPrintStatus}
           disabled={isResetting}
           className="ml-2 p-1 text-gray-400 hover:text-gray-600 rounded transition-colors duration-200"
           title="Reset print status"
         >
-          <RefreshCw className={`h-3 w-3 ${isResetting ? "animate-spin" : ""}`} />
+          <RefreshCw
+            className={`h-3 w-3 ${isResetting ? "animate-spin" : ""}`}
+          />
         </button>
       )}
     </div>
