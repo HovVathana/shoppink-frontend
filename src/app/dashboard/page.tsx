@@ -120,7 +120,7 @@ export default function DashboardPage() {
   >([]);
   const [topProducts, setTopProducts] = useState<any[]>([]);
 
-  // Separate date filter for monthly sales report, top products, and status distribution
+  // Separate date filter for monthly sales report and status distribution
   const [salesReportPeriod, setSalesReportPeriod] = useState("current_day");
   const [previousSalesReportPeriod, setPreviousSalesReportPeriod] =
     useState(null);
@@ -353,7 +353,7 @@ export default function DashboardPage() {
         }
 
         const response = await ordersAPI.getAll({
-          limit: 10000,
+          limit: 1000000,
           dateFrom: dateRange.from,
           dateTo: dateRange.to,
           allSources: true,
@@ -580,7 +580,7 @@ export default function DashboardPage() {
       // Fetch orders and drivers - get ALL data for statistics
       const [ordersResponse, driversResponse] = await Promise.all([
         ordersAPI.getAll({
-          limit: 10000,
+          limit: 1000000,
           dateFrom,
           dateTo,
           allSources: true, // Get orders from all sources (ADMIN + CUSTOMER) for dashboard stats
@@ -802,6 +802,51 @@ export default function DashboardPage() {
       }
 
       setDailyOrdersData(dailyData);
+
+      // Calculate top selling products from the same filtered orders
+      const productSalesMap = new Map();
+      filteredOrders.forEach((order: any) => {
+        order.orderItems?.forEach((item: any) => {
+          const productId = item.product.id;
+          const productName = item.product.name;
+          const quantity = item.quantity;
+
+          // Build option label
+          let optionLabel = "No option";
+          if (item.optionDetails?.selections?.length > 0) {
+            optionLabel = item.optionDetails.selections
+              .map((sel: any) =>
+                sel.selectedOptions.map((o: any) => o.name).join(", ")
+              )
+              .join(" / ");
+          }
+
+          if (!productSalesMap.has(productId)) {
+            productSalesMap.set(productId, {
+              productId,
+              name: productName,
+              totalQuantity: 0,
+              options: new Map(),
+            });
+          }
+
+          const productEntry = productSalesMap.get(productId);
+          productEntry.totalQuantity += quantity;
+
+          // Track per-option
+          const optionKey = optionLabel;
+          productEntry.options.set(
+            optionKey,
+            (productEntry.options.get(optionKey) || 0) + quantity
+          );
+        });
+      });
+
+      const topProductsData = Array.from(productSalesMap.values()).sort(
+        (a, b) => b.totalQuantity - a.totalQuantity
+      );
+
+      setTopProducts(topProductsData);
 
       // Calculate status distribution for pie chart
       const statusData: StatusDistribution[] = [
@@ -1079,9 +1124,7 @@ export default function DashboardPage() {
                         });
                         const topProductsData = Array.from(
                           productSalesMap.values()
-                        )
-                          .sort((a, b) => b.quantity - a.quantity)
-                          .slice(0, 5);
+                        ).sort((a, b) => b.totalQuantity - a.totalQuantity);
                         setTopProducts(topProductsData);
 
                         // Calculate status distribution
@@ -1564,22 +1607,15 @@ export default function DashboardPage() {
                   <div className="w-8 h-8 bg-gradient-to-r from-green-100 to-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
                     <TrendingUp className="h-4 w-4 text-green-600" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Top Selling Products
-                  </h3>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Top Selling Products
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                      Based on selected date range
+                    </p>
+                  </div>
                 </div>
-                <select
-                  value={salesReportPeriod}
-                  onChange={(e) => setSalesReportPeriod(e.target.value)}
-                  className="text-sm border border-gray-300 rounded-md px-3 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="current_day">Current Day</option>
-                  <option value="current_month">Current Month</option>
-                  <option value="last_month">Last Month</option>
-                  <option value="last_3_months">Last 3 Months</option>
-                  <option value="last_6_months">Last 6 Months</option>
-                  <option value="current_year">Current Year</option>
-                </select>
               </div>
               {/* <div className="space-y-3">
                 {topProducts.length > 0 ? (
@@ -1626,7 +1662,7 @@ export default function DashboardPage() {
                     // Filter out "No option"
                     const filteredOptions = Array.from(
                       options.entries()
-                    ).filter(([label]) => label !== "No option");
+                    ).filter((entry: any) => entry[0] !== "No option");
                     return (
                       <div
                         key={product.productId}

@@ -191,7 +191,7 @@ export default function AssignedOrdersPage() {
         const params: any = {
           dateFrom,
           dateTo,
-          limit: 10000, // Fetch all orders within date range
+          limit: 1000000, // Fetch all orders within date range
           assignedOnly: true, // Include all order sources for assigned orders
         };
         const response = await ordersAPI.getAll(params);

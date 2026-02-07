@@ -172,7 +172,7 @@ export default function PickupOrdersPage() {
         const params: any = {
           dateFrom,
           dateTo,
-          limit: 10000, // Fetch all orders within date range
+          limit: 1000000, // Fetch all orders within date range
           orderSource: "PICKUP", // Only fetch PICKUP orders
         };
         const response = await ordersAPI.getAll(params, forceRefresh); // Pass bustCache to API

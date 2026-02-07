@@ -214,7 +214,7 @@ export default function CustomerOrdersPage() {
         const params: any = {
           dateFrom,
           dateTo,
-          limit: 10000, // Fetch all orders within date range
+          limit: 1000000, // Fetch all orders within date range
         };
         const response = await customerOrdersAPI.getAll(params);
         const orders = response.data.orders || [];
