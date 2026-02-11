@@ -84,7 +84,7 @@ export default function OrderModal({
   // This is used ONLY when variants are not available or no exact variant match is found
   const calculatePriceWithOptions = (
     product: any,
-    productOptions: { [groupId: string]: string[] }
+    productOptions: { [groupId: string]: string[] },
   ) => {
     let calculatedPrice = 0; // Start with 0, not product base price
     let hasBasePrice = false;
@@ -94,7 +94,7 @@ export default function OrderModal({
         const selectedOptionIds = productOptions[group.id] || [];
         selectedOptionIds.forEach((selectedOptionId: string) => {
           const option = group.options.find(
-            (opt: any) => opt.id === selectedOptionId
+            (opt: any) => opt.id === selectedOptionId,
           );
           if (option) {
             switch (option.priceType) {
@@ -241,7 +241,7 @@ export default function OrderModal({
           // Restore product options if they exist
           console.log(
             `Processing options for product ${index}:`,
-            item.optionDetails
+            item.optionDetails,
           ); // Debug log
           if (item.optionDetails) {
             const productOptions: { [groupId: string]: string[] } = {};
@@ -272,7 +272,7 @@ export default function OrderModal({
               existingOptions[index] = productOptions;
               console.log(
                 `Restored options for product ${index}:`,
-                productOptions
+                productOptions,
               ); // Debug log
             }
           }
@@ -364,7 +364,7 @@ export default function OrderModal({
               existingOptions[index] = productOptions;
               console.log(
                 `Re-restoring options for product ${index}:`,
-                productOptions
+                productOptions,
               ); // Debug log
             }
           }
@@ -402,13 +402,13 @@ export default function OrderModal({
             current: watch("companyDeliveryPrice"),
             totalWeight: totals.totalWeight,
             province: watch("province"),
-          }
+          },
         ); // Debug log
 
         if (totals.calculatedCompanyDeliveryPrice !== undefined) {
           setValue(
             "companyDeliveryPrice",
-            totals.calculatedCompanyDeliveryPrice
+            totals.calculatedCompanyDeliveryPrice,
           );
         }
       }, 600); // Slightly longer delay than option restoration
@@ -538,8 +538,8 @@ export default function OrderModal({
         const exact = vlist.find((v: any) => {
           const voSet = new Set(
             (v.variantOptions || []).map(
-              (vo: any) => vo.optionId || vo.option?.id
-            )
+              (vo: any) => vo.optionId || vo.option?.id,
+            ),
           );
           if (voSet.size !== desired.size) return false;
           for (const id of Array.from(desired)) {
@@ -551,7 +551,7 @@ export default function OrderModal({
         if (exact) {
           // Check if any of the variant's options have BASE price type
           const hasBaseOption = exact.variantOptions?.some(
-            (vo: any) => vo.option?.priceType === "BASE"
+            (vo: any) => vo.option?.priceType === "BASE",
           );
 
           let variantPrice;
@@ -625,14 +625,14 @@ export default function OrderModal({
       if (product.optionGroups) {
         product.optionGroups.forEach((group: any) => {
           const defaultOption = group.options.find(
-            (option: any) => option.isDefault && option.isAvailable
+            (option: any) => option.isDefault && option.isAvailable,
           );
           if (defaultOption) {
             defaultOptions[group.id] = [defaultOption.id];
           } else if (group.isRequired) {
             // If required but no default, select first available option
             const firstAvailable = group.options.find(
-              (option: any) => option.isAvailable
+              (option: any) => option.isAvailable,
             );
             if (firstAvailable) {
               defaultOptions[group.id] = [firstAvailable.id];
@@ -653,8 +653,8 @@ export default function OrderModal({
           const exact = vlist.find((v: any) => {
             const voSet = new Set(
               (v.variantOptions || []).map(
-                (vo: any) => vo.optionId || vo.option?.id
-              )
+                (vo: any) => vo.optionId || vo.option?.id,
+              ),
             );
             if (voSet.size !== desired.size) return false;
             for (const id of Array.from(desired)) {
@@ -665,7 +665,7 @@ export default function OrderModal({
           if (exact) {
             // Check if any of the variant's options have BASE price type
             const hasBaseOption = exact.variantOptions?.some(
-              (vo: any) => vo.option?.priceType === "BASE"
+              (vo: any) => vo.option?.priceType === "BASE",
             );
 
             if (hasBaseOption) {
@@ -709,7 +709,7 @@ export default function OrderModal({
       (product) =>
         product.name.toLowerCase().includes(term) ||
         product.sku?.toLowerCase().includes(term) ||
-        product.category?.name.toLowerCase().includes(term)
+        product.category?.name.toLowerCase().includes(term),
     );
   };
 
@@ -741,10 +741,10 @@ export default function OrderModal({
     productIndex: number,
     groupId: string,
     optionId: string,
-    selectionType: string
+    selectionType: string,
   ) => {
     const product = products.find(
-      (p) => p.id === watchedProducts[productIndex]?.productId
+      (p) => p.id === watchedProducts[productIndex]?.productId,
     );
     if (!product) return;
 
@@ -760,7 +760,7 @@ export default function OrderModal({
         const currentSelections = productOptions[groupId] || [];
         if (currentSelections.includes(optionId)) {
           productOptions[groupId] = currentSelections.filter(
-            (id) => id !== optionId
+            (id) => id !== optionId,
           );
         } else {
           productOptions[groupId] = [...currentSelections, optionId];
@@ -780,8 +780,8 @@ export default function OrderModal({
           const exact = vlist.find((v: any) => {
             const voSet = new Set(
               (v.variantOptions || []).map(
-                (vo: any) => vo.optionId || vo.option?.id
-              )
+                (vo: any) => vo.optionId || vo.option?.id,
+              ),
             );
             if (voSet.size !== desired.size) return false;
             for (const id of Array.from(desired)) {
@@ -792,7 +792,7 @@ export default function OrderModal({
           if (exact) {
             // Check if any of the variant's options have BASE price type
             const hasBaseOption = exact.variantOptions?.some(
-              (vo: any) => vo.option?.priceType === "BASE"
+              (vo: any) => vo.option?.priceType === "BASE",
             );
 
             if (hasBaseOption) {
@@ -807,7 +807,7 @@ export default function OrderModal({
             // Fallback to option-based adjustments when exact variant not found
             calculatedPrice = calculatePriceWithOptions(
               product,
-              productOptions
+              productOptions,
             );
           }
         } else if (product.optionGroups) {
@@ -832,12 +832,12 @@ export default function OrderModal({
     });
   };
 
-  // Compute available stock for an option based on variants and current selections
+  // Compute available stocks for an option based on variants and current selections
   const getOptionAvailableStock = (
     selectedProduct: any,
     productIndex: number,
     groupId: string,
-    option: any
+    option: any,
   ) => {
     const variants = variantsByProduct[selectedProduct.id] || [];
 
@@ -853,9 +853,9 @@ export default function OrderModal({
         .filter((v: any) =>
           idsToMatch.every((rid) =>
             (v.variantOptions || []).some(
-              (vo: any) => (vo.optionId || vo.option?.id) === rid
-            )
-          )
+              (vo: any) => (vo.optionId || vo.option?.id) === rid,
+            ),
+          ),
         )
         .reduce((sum: number, v: any) => sum + (v.stock || 0), 0);
 
@@ -958,7 +958,7 @@ export default function OrderModal({
                 const selectedOptionDetails = selectedIds
                   .map((optionId: string) => {
                     const option = group.options.find(
-                      (opt: any) => opt.id === optionId
+                      (opt: any) => opt.id === optionId,
                     );
                     return option
                       ? {
@@ -1076,7 +1076,7 @@ export default function OrderModal({
                       </label>
                       {watch("customerPhone") &&
                         blacklistSet.has(
-                          normalizePhone(watch("customerPhone"))
+                          normalizePhone(watch("customerPhone")),
                         ) && (
                           <p className="mt-1 text-xs text-yellow-700 flex items-center gap-1">
                             <ShieldAlert className="h-3 w-3 text-yellow-600" />
@@ -1205,7 +1205,7 @@ export default function OrderModal({
                   <div className="space-y-4">
                     {fields.map((field, index) => {
                       const selectedProduct = products.find(
-                        (p) => p.id === watchedProducts[index]?.productId
+                        (p) => p.id === watchedProducts[index]?.productId,
                       );
                       const productOptions = selectedOptions[index] || {};
 
@@ -1229,7 +1229,7 @@ export default function OrderModal({
                                   onChange={(e) =>
                                     handleProductSearchChange(
                                       index,
-                                      e.target.value
+                                      e.target.value,
                                     )
                                   }
                                   className="input-field pr-10 w-full"
@@ -1265,10 +1265,10 @@ export default function OrderModal({
                                   !watchedProducts[index]?.productId && (
                                     <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-2xl max-h-72 sm:max-h-60 overflow-y-auto">
                                       {getFilteredProducts(
-                                        productSearchTerms[index] || ""
+                                        productSearchTerms[index] || "",
                                       ).length > 0 ? (
                                         getFilteredProducts(
-                                          productSearchTerms[index] || ""
+                                          productSearchTerms[index] || "",
                                         ).map((product) => (
                                           <div
                                             key={product.id}
@@ -1277,7 +1277,7 @@ export default function OrderModal({
                                               e.preventDefault();
                                               handleProductChange(
                                                 index,
-                                                product.id
+                                                product.id,
                                               );
                                             }}
                                           >
@@ -1355,7 +1355,7 @@ export default function OrderModal({
                                       if (currentQty > 1) {
                                         setValue(
                                           `products.${index}.quantity`,
-                                          currentQty - 1
+                                          currentQty - 1,
                                         );
                                       }
                                     }}
@@ -1381,7 +1381,7 @@ export default function OrderModal({
                                             value: 1,
                                             message: "Minimum quantity is 1",
                                           },
-                                        }
+                                        },
                                       )}
                                       type="hidden"
                                     />
@@ -1394,7 +1394,7 @@ export default function OrderModal({
                                         watchedProducts[index]?.quantity || 1;
                                       setValue(
                                         `products.${index}.quantity`,
-                                        currentQty + 1
+                                        currentQty + 1,
                                       );
                                     }}
                                     className="flex items-center justify-center w-9 h-9 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors touch-manipulation"
@@ -1470,7 +1470,7 @@ export default function OrderModal({
                                           {group.options
                                             .filter(
                                               (option: any) =>
-                                                option.isAvailable
+                                                option.isAvailable,
                                             )
                                             .map((option: any) => {
                                               const isSelected = (
@@ -1481,7 +1481,7 @@ export default function OrderModal({
                                                   selectedProduct,
                                                   index,
                                                   group.id,
-                                                  option
+                                                  option,
                                                 );
                                               const isOutOfStock =
                                                 availableStock <= 0;
@@ -1508,8 +1508,8 @@ export default function OrderModal({
                                                     isSelected
                                                       ? "border-blue-500 bg-blue-50"
                                                       : isOutOfStock
-                                                      ? "border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed"
-                                                      : "border-gray-200 hover:border-gray-300"
+                                                        ? "border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed"
+                                                        : "border-gray-200 hover:border-gray-300"
                                                   }`}
                                                   onClick={() => {
                                                     if (!isOutOfStock) {
@@ -1517,7 +1517,7 @@ export default function OrderModal({
                                                         index,
                                                         group.id,
                                                         option.id,
-                                                        group.selectionType
+                                                        group.selectionType,
                                                       );
                                                     }
                                                   }}
@@ -1578,9 +1578,9 @@ export default function OrderModal({
                                                                   0
                                                                     ? "bg-red-100 text-red-800"
                                                                     : availableStock <=
-                                                                      10
-                                                                    ? "bg-yellow-100 text-yellow-800"
-                                                                    : "bg-green-100 text-green-800"
+                                                                        10
+                                                                      ? "bg-yellow-100 text-yellow-800"
+                                                                      : "bg-green-100 text-green-800"
                                                                 }`}
                                                               >
                                                                 {availableStock}
@@ -1608,7 +1608,7 @@ export default function OrderModal({
                                                           <span className="font-medium">
                                                             $
                                                             {option.priceValue.toFixed(
-                                                              2
+                                                              2,
                                                             )}
                                                           </span>
                                                         )}
@@ -1618,7 +1618,7 @@ export default function OrderModal({
                                                           <span className="font-medium">
                                                             +$
                                                             {option.priceValue.toFixed(
-                                                              2
+                                                              2,
                                                             )}
                                                           </span>
                                                         )}
@@ -1637,7 +1637,7 @@ export default function OrderModal({
                                             })}
                                         </div>
                                       </div>
-                                    )
+                                    ),
                                   )}
                                 </div>
                               </div>
@@ -1658,8 +1658,8 @@ export default function OrderModal({
                       isPickupOrder
                         ? "md:grid-cols-1"
                         : isAdmin
-                        ? "md:grid-cols-3"
-                        : "md:grid-cols-2"
+                          ? "md:grid-cols-3"
+                          : "md:grid-cols-2"
                     } gap-4`}
                   >
                     {!isPickupOrder && (
