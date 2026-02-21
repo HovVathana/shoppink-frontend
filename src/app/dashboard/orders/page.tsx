@@ -190,7 +190,7 @@ export default function OrdersPage() {
         // Filter to only show ADMIN orders (exclude CUSTOMER and PICKUP)
         // This is a safety measure in case old orders don't have orderSource set
         const orders = response.data.orders.filter(
-          (order: any) => !order.orderSource || order.orderSource === "ADMIN"
+          (order: any) => !order.orderSource || order.orderSource === "ADMIN",
         );
 
         // Cache the results
@@ -203,7 +203,7 @@ export default function OrdersPage() {
         setOrdersLoading(false);
       }
     },
-    [dateFrom, dateTo]
+    [dateFrom, dateTo],
   );
 
   const findDuplicatePhones = () => {
@@ -226,7 +226,7 @@ export default function OrdersPage() {
         count: orders.length,
         orders: orders.sort(
           (a: any, b: any) =>
-            new Date(b.orderAt).getTime() - new Date(a.orderAt).getTime()
+            new Date(b.orderAt).getTime() - new Date(a.orderAt).getTime(),
         ),
       }))
       .sort((a, b) => b.count - a.count);
@@ -248,7 +248,7 @@ export default function OrdersPage() {
     if (!customerName) return;
 
     const matchingOrders = filteredOrders.filter((order) =>
-      order.customerName.toLowerCase().includes(customerName.toLowerCase())
+      order.customerName.toLowerCase().includes(customerName.toLowerCase()),
     );
 
     setQuickFunctionResult({
@@ -317,7 +317,7 @@ export default function OrdersPage() {
     const matchingOrders = filteredOrders.filter(
       (order) =>
         order.customerLocation.toLowerCase().includes(location.toLowerCase()) ||
-        order.province.toLowerCase().includes(location.toLowerCase())
+        order.province.toLowerCase().includes(location.toLowerCase()),
     );
 
     setQuickFunctionResult({
@@ -336,7 +336,7 @@ export default function OrdersPage() {
     const recentOrders = filteredOrders
       .filter((order) => new Date(order.orderAt) >= yesterday)
       .sort(
-        (a, b) => new Date(b.orderAt).getTime() - new Date(a.orderAt).getTime()
+        (a, b) => new Date(b.orderAt).getTime() - new Date(a.orderAt).getTime(),
       );
 
     setQuickFunctionResult({
@@ -350,22 +350,22 @@ export default function OrdersPage() {
   // Quick function: Find orders by status
   const findOrdersByStatus = () => {
     const status = prompt(
-      "Enter status (PLACED, DELIVERING, COMPLETED, RETURNED, CANCELLED):"
+      "Enter status (PLACED, DELIVERING, COMPLETED, RETURNED, CANCELLED):",
     )?.toUpperCase();
     if (
       !status ||
       !["PLACED", "DELIVERING", "COMPLETED", "RETURNED", "CANCELLED"].includes(
-        status
+        status,
       )
     ) {
       toast.error(
-        "Invalid status. Use: PLACED, DELIVERING, COMPLETED, RETURNED, or CANCELLED"
+        "Invalid status. Use: PLACED, DELIVERING, COMPLETED, RETURNED, or CANCELLED",
       );
       return;
     }
 
     const statusOrders = filteredOrders.filter(
-      (order) => order.state === status
+      (order) => order.state === status,
     );
 
     setQuickFunctionResult({
@@ -374,14 +374,14 @@ export default function OrdersPage() {
       type: "orders",
     });
     toast.success(
-      `Found ${statusOrders.length} ${status.toLowerCase()} orders`
+      `Found ${statusOrders.length} ${status.toLowerCase()} orders`,
     );
   };
 
   // Quick function: Find orders by date range
   const findOrdersByDateRange = () => {
     const days = prompt(
-      "Enter number of days back to search (e.g., 7 for last week):"
+      "Enter number of days back to search (e.g., 7 for last week):",
     );
     if (!days || isNaN(Number(days))) return;
 
@@ -391,7 +391,7 @@ export default function OrdersPage() {
     const dateRangeOrders = filteredOrders
       .filter((order) => new Date(order.orderAt) >= startDate)
       .sort(
-        (a, b) => new Date(b.orderAt).getTime() - new Date(a.orderAt).getTime()
+        (a, b) => new Date(b.orderAt).getTime() - new Date(a.orderAt).getTime(),
       );
 
     setQuickFunctionResult({
@@ -400,7 +400,7 @@ export default function OrdersPage() {
       type: "orders",
     });
     toast.success(
-      `Found ${dateRangeOrders.length} orders from last ${days} days`
+      `Found ${dateRangeOrders.length} orders from last ${days} days`,
     );
   };
 
@@ -439,7 +439,7 @@ export default function OrdersPage() {
           order.customerLocation
             .toLowerCase()
             .includes(searchTerm.toLowerCase()) ||
-          order.province.toLowerCase().includes(searchTerm.toLowerCase())
+          order.province.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
@@ -463,7 +463,7 @@ export default function OrdersPage() {
         filtered = filtered.filter((order) => !order.driverId);
       } else {
         filtered = filtered.filter(
-          (order) => order.driverId === selectedDriver
+          (order) => order.driverId === selectedDriver,
         );
       }
     }
@@ -480,6 +480,9 @@ export default function OrdersPage() {
       } else if (sortField === "orderAt") {
         aValue = new Date(a.orderAt);
         bValue = new Date(b.orderAt);
+      } else if (sortField === "assignedAt") {
+        aValue = new Date(a.assignedAt);
+        bValue = new Date(b.assignedAt);
       }
 
       if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
@@ -520,8 +523,8 @@ export default function OrdersPage() {
       // Optimistic update to prevent table reset
       setAllOrders((prevOrders) =>
         prevOrders.map((order) =>
-          order.id === orderId ? { ...order, state: newState } : order
-        )
+          order.id === orderId ? { ...order, state: newState } : order,
+        ),
       );
 
       await ordersAPI.updateState(orderId, newState);
@@ -555,8 +558,8 @@ export default function OrdersPage() {
                 state: driverId ? "DELIVERING" : "PLACED",
                 assignedAt: driverId ? new Date().toISOString() : undefined,
               }
-            : order
-        )
+            : order,
+        ),
       );
 
       await ordersAPI.assignDriver(orderId, driverId || null);
@@ -587,33 +590,33 @@ export default function OrdersPage() {
     setSelectedOrders((prev) =>
       prev.includes(orderId)
         ? prev.filter((id) => id !== orderId)
-        : [...prev, orderId]
+        : [...prev, orderId],
     );
   };
 
   const handleSelectAllOrders = () => {
     const currentPageOrders = filteredOrders.slice(
       (currentPage - 1) * itemsPerPage,
-      currentPage * itemsPerPage
+      currentPage * itemsPerPage,
     );
     const currentPageOrderIds = currentPageOrders.map((order) => order.id);
 
     if (currentPageOrderIds.every((id) => selectedOrders.includes(id))) {
       // Deselect all on current page
       setSelectedOrders((prev) =>
-        prev.filter((id) => !currentPageOrderIds.includes(id))
+        prev.filter((id) => !currentPageOrderIds.includes(id)),
       );
     } else {
       // Select all on current page
       setSelectedOrders((prev) =>
-        Array.from(new Set([...prev, ...currentPageOrderIds]))
+        Array.from(new Set([...prev, ...currentPageOrderIds])),
       );
     }
   };
 
   const getSelectedOrdersData = () => {
     return allOrders.filter((order: Order) =>
-      selectedOrders.includes(order.id)
+      selectedOrders.includes(order.id),
     );
   };
 
@@ -627,7 +630,7 @@ export default function OrdersPage() {
 
       // Optimistic UI update: Remove order from the list
       setAllOrders((prevOrders) =>
-        prevOrders.filter((prevOrder) => prevOrder.id !== order.id)
+        prevOrders.filter((prevOrder) => prevOrder.id !== order.id),
       );
 
       // Clear cache for the current date range
@@ -643,15 +646,15 @@ export default function OrdersPage() {
 
   const handlePrintStatusChange = (
     orderId: string,
-    newPrintStatus: boolean
+    newPrintStatus: boolean,
   ) => {
     // Optimistic UI update: Update print status in the list
     setAllOrders((prevOrders) =>
       prevOrders.map((prevOrder) =>
         prevOrder.id === orderId
           ? { ...prevOrder, isPrinted: newPrintStatus }
-          : prevOrder
-      )
+          : prevOrder,
+      ),
     );
 
     // Clear cache for the current date range
@@ -661,15 +664,15 @@ export default function OrdersPage() {
 
   const handleBulkPrintStatusChange = (
     orderIds: string[],
-    newPrintStatus: boolean
+    newPrintStatus: boolean,
   ) => {
     // Optimistic UI update: Update print status for multiple orders
     setAllOrders((prevOrders) =>
       prevOrders.map((prevOrder) =>
         orderIds.includes(prevOrder.id)
           ? { ...prevOrder, isPrinted: newPrintStatus }
-          : prevOrder
-      )
+          : prevOrder,
+      ),
     );
 
     // Clear cache for the current date range
@@ -687,7 +690,7 @@ export default function OrdersPage() {
     if (savedOrder && wasCreating) {
       // Check if the new order falls within the current date range
       const orderDate = new Date(
-        savedOrder.orderAt || savedOrder.createdAt || new Date()
+        savedOrder.orderAt || savedOrder.createdAt || new Date(),
       );
       const fromDate = dateFrom ? new Date(dateFrom) : null;
       const toDate = dateTo ? new Date(dateTo + "T23:59:59") : null;
@@ -716,8 +719,8 @@ export default function OrdersPage() {
         prevOrders.map((prevOrder) =>
           prevOrder.id === savedOrder.id
             ? { ...prevOrder, ...savedOrder }
-            : prevOrder
-        )
+            : prevOrder,
+        ),
       );
 
       // Clear cache for the current date range
@@ -1326,12 +1329,12 @@ export default function OrdersPage() {
                         checked={
                           filteredOrders.slice(
                             (currentPage - 1) * itemsPerPage,
-                            currentPage * itemsPerPage
+                            currentPage * itemsPerPage,
                           ).length > 0 &&
                           filteredOrders
                             .slice(
                               (currentPage - 1) * itemsPerPage,
-                              currentPage * itemsPerPage
+                              currentPage * itemsPerPage,
                             )
                             .every((order) => selectedOrders.includes(order.id))
                         }
@@ -1359,6 +1362,19 @@ export default function OrdersPage() {
                       <div className="flex items-center">
                         Order Date
                         {sortField === "orderAt" && (
+                          <span className="ml-1">
+                            {sortDirection === "asc" ? "↑" : "↓"}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort("assignedAt")}
+                    >
+                      <div className="flex items-center">
+                        Assign Date
+                        {sortField === "assignedAt" && (
                           <span className="ml-1">
                             {sortDirection === "asc" ? "↑" : "↓"}
                           </span>
@@ -1438,7 +1454,7 @@ export default function OrdersPage() {
                   {filteredOrders
                     .slice(
                       (currentPage - 1) * itemsPerPage,
-                      currentPage * itemsPerPage
+                      currentPage * itemsPerPage,
                     )
                     .map((order: Order) => {
                       const stateInfo = getStateInfo(order.state);
@@ -1478,11 +1494,33 @@ export default function OrdersPage() {
                                   month: "short",
                                   day: "numeric",
                                   year: "numeric",
-                                }
+                                },
                               )}
                             </div>
                             <div className="text-xs text-gray-500">
                               {new Date(order.orderAt).toLocaleTimeString()}
+                            </div>
+                          </td>
+
+                          {/* Assign Date */}
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {order.assignedAt
+                                ? new Date(
+                                    order?.assignedAt,
+                                  ).toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  })
+                                : null}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {order.assignedAt
+                                ? new Date(
+                                    order?.assignedAt,
+                                  ).toLocaleTimeString()
+                                : "No assign date"}
                             </div>
                           </td>
 
@@ -1495,7 +1533,7 @@ export default function OrdersPage() {
                               <a
                                 href={`tg://resolve?phone=${order.customerPhone.replace(
                                   /[^0-9+]/g,
-                                  ""
+                                  "",
                                 )}`}
                                 className="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200"
                                 title="Open in Telegram"
@@ -1503,7 +1541,7 @@ export default function OrdersPage() {
                                 {order.customerPhone}
                               </a>
                               {blacklistSet.has(
-                                normalizePhone(order.customerPhone)
+                                normalizePhone(order.customerPhone),
                               ) && (
                                 <span className="inline-flex items-center text-xs font-medium text-red-700 bg-red-100 px-2 py-0.5 rounded">
                                   Blacklisted
@@ -1749,7 +1787,7 @@ export default function OrdersPage() {
                       <span className="font-medium">
                         {Math.min(
                           currentPage * itemsPerPage,
-                          filteredOrders.length
+                          filteredOrders.length,
                         )}
                       </span>{" "}
                       of{" "}
@@ -1880,7 +1918,7 @@ export default function OrdersPage() {
                                   </p>
                                   <p className="text-xs text-gray-500">
                                     {new Date(
-                                      order.orderAt
+                                      order.orderAt,
                                     ).toLocaleDateString()}{" "}
                                     •
                                     <span
@@ -1888,10 +1926,10 @@ export default function OrdersPage() {
                                         order.state === "COMPLETED"
                                           ? "text-green-600"
                                           : order.state === "DELIVERING"
-                                          ? "text-blue-600"
-                                          : order.state === "RETURNED"
-                                          ? "text-red-600"
-                                          : "text-gray-600"
+                                            ? "text-blue-600"
+                                            : order.state === "RETURNED"
+                                              ? "text-red-600"
+                                              : "text-gray-600"
                                       }`}
                                     >
                                       {order.state}
@@ -1910,7 +1948,7 @@ export default function OrdersPage() {
                                     onClick={() =>
                                       copyToClipboard(
                                         order.id,
-                                        `Order ID ${order.id} copied!`
+                                        `Order ID ${order.id} copied!`,
                                       )
                                     }
                                     className="text-xs text-blue-600 hover:text-blue-800"
@@ -2000,7 +2038,7 @@ export default function OrdersPage() {
                                       onClick={() =>
                                         copyToClipboard(
                                           order.id,
-                                          `Order ID ${order.id} copied!`
+                                          `Order ID ${order.id} copied!`,
                                         )
                                       }
                                       className="text-blue-600 hover:text-blue-800 font-medium"
@@ -2013,7 +2051,7 @@ export default function OrdersPage() {
                                     <span className="text-sm text-gray-600 flex items-center gap-2">
                                       <span>{order.customerPhone}</span>
                                       {blacklistSet.has(
-                                        normalizePhone(order.customerPhone)
+                                        normalizePhone(order.customerPhone),
                                       ) && (
                                         <span className="inline-flex items-center text-xs font-medium text-red-700 bg-red-100 px-2 py-0.5 rounded">
                                           Blacklisted
@@ -2027,7 +2065,7 @@ export default function OrdersPage() {
                                   <div className="mt-1 flex items-center space-x-4 text-xs text-gray-500">
                                     <span>
                                       {new Date(
-                                        order.orderAt
+                                        order.orderAt,
                                       ).toLocaleDateString()}
                                     </span>
                                     <span
@@ -2035,10 +2073,10 @@ export default function OrdersPage() {
                                         order.state === "COMPLETED"
                                           ? "bg-green-100 text-green-800"
                                           : order.state === "DELIVERING"
-                                          ? "bg-blue-100 text-blue-800"
-                                          : order.state === "RETURNED"
-                                          ? "bg-red-100 text-red-800"
-                                          : "bg-gray-100 text-gray-800"
+                                            ? "bg-blue-100 text-blue-800"
+                                            : order.state === "RETURNED"
+                                              ? "bg-red-100 text-red-800"
+                                              : "bg-gray-100 text-gray-800"
                                       }`}
                                     >
                                       {order.state}
