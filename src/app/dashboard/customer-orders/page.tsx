@@ -17,6 +17,7 @@ import {
   MapPin,
   X,
   ShoppingCart,
+  MessageCircle,
 } from "lucide-react";
 import DashboardLayout from "@/components/Layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,6 +28,7 @@ import { usePageState } from "@/contexts/PageStateContext";
 import { useBlacklist } from "@/contexts/BlacklistContext";
 import { useDrivers } from "@/contexts/DriversContext";
 import CustomerOrderModal from "@/components/Orders/CustomerOrderModal";
+import OrderComments from "@/components/Orders/OrderComments";
 import { cache } from "@/utils/simpleCache";
 import { copyToClipboard, formatOrderIdForDisplay } from "@/utils/clipboard";
 import OrdersPDFExport from "@/components/Orders/OrdersPDFExport";
@@ -61,6 +63,9 @@ interface Order {
     name: string;
     phone: string;
     isActive: boolean;
+  };
+  _count?: {
+    orderComments: number;
   };
   orderItems: Array<{
     id: string;
@@ -184,6 +189,9 @@ export default function CustomerOrdersPage() {
     useState<Order | null>(null);
   const [selectedOrderForEdit, setSelectedOrderForEdit] =
     useState<Order | null>(null);
+  const [selectedOrderForComments, setSelectedOrderForComments] =
+    useState<Order | null>(null);
+  const [isCommentsModalOpen, setIsCommentsModalOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
 
   // Quick functions state
@@ -1340,6 +1348,7 @@ export default function CustomerOrdersPage() {
                               isPrinted={order.isPrinted}
                               onPrintStatusChange={refreshOrders}
                               canResetPrintStatus={canEditOrders()}
+                              commentCount={order._count?.orderComments || 0}
                             />
                           </td>
 
@@ -1577,6 +1586,21 @@ export default function CustomerOrdersPage() {
                                 title="Delete Order"
                               >
                                 <Trash2 className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setSelectedOrderForComments(order);
+                                  setIsCommentsModalOpen(true);
+                                }}
+                                className="text-blue-600 hover:text-blue-900 relative"
+                                title="View/Add Comments"
+                              >
+                                <MessageCircle className="h-4 w-4" />
+                                {order._count?.orderComments ? (
+                                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                                    {order._count.orderComments > 9 ? '9+' : order._count.orderComments}
+                                  </span>
+                                ) : null}
                               </button>
                             </div>
                           </td>
@@ -2058,6 +2082,35 @@ export default function CustomerOrdersPage() {
           )}
         </div>
       </div>
+
+      {/* Comments Modal */}
+      {isCommentsModalOpen && selectedOrderForComments && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center p-6 border-b">
+              <h2 className="text-2xl font-bold">
+                Order Comments - #{selectedOrderForComments.id}
+              </h2>
+              <button
+                onClick={() => {
+                  setIsCommentsModalOpen(false);
+                  setSelectedOrderForComments(null);
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-6">
+              <OrderComments
+                orderId={selectedOrderForComments.id}
+                readonly={false}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }
+

@@ -22,6 +22,7 @@ import {
   Users,
   RefreshCw,
   UserPlus,
+  MessageCircle,
 } from "lucide-react";
 
 interface DashboardLayoutProps {
@@ -105,6 +106,13 @@ const allNavigation = [
     icon: ShieldAlert,
     shortName: "Blacklist",
     permission: "view_orders",
+  },
+  {
+    name: "Order Comments",
+    href: "/dashboard/comments",
+    icon: MessageCircle,
+    shortName: "Comments",
+    permission: "manage_orders",
   },
   {
     name: "Drivers",

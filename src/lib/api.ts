@@ -383,4 +383,27 @@ export const customerOrdersAPI = {
   delete: (id: string) => api.delete(`/customer-orders/${id}`),
 };
 
+// Comments API
+export const commentsAPI = {
+  // Create a comment on an order
+  create: (orderId: string, content: string) =>
+    api.post(`/comments/${orderId}`, { content }),
+  
+  // Get all comments for a specific order
+  getByOrderId: (orderId: string, params?: { page?: number; limit?: number }) =>
+    api.get(`/comments/${orderId}`, { params }),
+  
+  // Get all comments (admin only)
+  getAll: (params?: { status?: string; page?: number; limit?: number }) =>
+    api.get("/comments", { params }),
+  
+  // Update comment status (admin only)
+  updateStatus: (commentId: string, status: "CONFIRMED" | "DENIED") =>
+    api.patch(`/comments/${commentId}/status`, { status }),
+  
+  // Delete a comment (admin only)
+  delete: (commentId: string) =>
+    api.delete(`/comments/${commentId}`),
+};
+
 export default api;

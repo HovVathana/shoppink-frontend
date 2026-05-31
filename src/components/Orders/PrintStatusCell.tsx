@@ -11,6 +11,7 @@ interface PrintStatusCellProps {
   isPrinted: boolean;
   onPrintStatusChange?: (orderId: string, newStatus: boolean) => void;
   canResetPrintStatus?: boolean;
+  commentCount?: number;
 }
 
 export default function PrintStatusCell({
@@ -18,6 +19,7 @@ export default function PrintStatusCell({
   isPrinted,
   onPrintStatusChange,
   canResetPrintStatus = true, // Default to true for backward compatibility
+  commentCount = 0,
 }: PrintStatusCellProps) {
   const [isResetting, setIsResetting] = useState(false);
 
@@ -53,8 +55,13 @@ export default function PrintStatusCell({
         className="text-left hover:bg-blue-50 rounded px-2 py-1 transition-colors duration-200 flex-1"
         title="Click to copy order ID"
       >
-        <div className="text-sm font-medium text-blue-600 hover:text-blue-800">
+        <div className="text-sm font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1">
           {formatOrderIdForDisplay(orderId)}
+          {commentCount > 0 && (
+            <span className="inline-flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full w-4 h-4 flex-shrink-0">
+              {commentCount > 9 ? '9+' : commentCount}
+            </span>
+          )}
         </div>
         <div className="text-xs text-gray-500">Click to copy</div>
         {/* Print Status Indicator - New line */}

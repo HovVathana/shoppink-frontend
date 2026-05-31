@@ -132,7 +132,7 @@ export default function DashboardPage() {
   const [isLoadingSalesData, setIsLoadingSalesData] = useState(false);
   // Set date range to last 30 days for main dashboard stats
   const [dateFrom, setDateFrom] = useState(
-    new Date().toISOString().split("T")[0]
+    new Date().toISOString().split("T")[0],
   );
   const [dateTo, setDateTo] = useState(new Date().toISOString().split("T")[0]);
 
@@ -369,7 +369,7 @@ export default function DashboardPage() {
           const orderDate = new Date(order.orderAt).toISOString().split("T")[0];
           dailyOrdersMap.set(
             orderDate,
-            (dailyOrdersMap.get(orderDate) || 0) + 1
+            (dailyOrdersMap.get(orderDate) || 0) + 1,
           );
         });
 
@@ -425,7 +425,7 @@ export default function DashboardPage() {
             if (item.optionDetails?.selections?.length > 0) {
               optionLabel = item.optionDetails.selections
                 .map((sel: any) =>
-                  sel.selectedOptions.map((o: any) => o.name).join(", ")
+                  sel.selectedOptions.map((o: any) => o.name).join(", "),
                 )
                 .join(" / ");
             }
@@ -446,7 +446,7 @@ export default function DashboardPage() {
             const optionKey = optionLabel;
             productEntry.options.set(
               optionKey,
-              (productEntry.options.get(optionKey) || 0) + quantity
+              (productEntry.options.get(optionKey) || 0) + quantity,
             );
           });
         });
@@ -455,24 +455,24 @@ export default function DashboardPage() {
         //   (a, b) => b.quantity - a.quantity
         // );
         const topProductsData = Array.from(productSalesMap.values()).sort(
-          (a, b) => b.totalQuantity - a.totalQuantity
+          (a, b) => b.totalQuantity - a.totalQuantity,
         );
 
         // Calculate status distribution
         const placedOrders = orders.filter(
-          (order: any) => order.state === "PLACED"
+          (order: any) => order.state === "PLACED",
         ).length;
         const deliveringOrders = orders.filter(
-          (order: any) => order.state === "DELIVERING"
+          (order: any) => order.state === "DELIVERING",
         ).length;
         const completedOrders = orders.filter(
-          (order: any) => order.state === "COMPLETED"
+          (order: any) => order.state === "COMPLETED",
         ).length;
         const returnedOrders = orders.filter(
-          (order: any) => order.state === "RETURNED"
+          (order: any) => order.state === "RETURNED",
         ).length;
         const cancelledOrders = orders.filter(
-          (order: any) => order.state === "CANCELLED"
+          (order: any) => order.state === "CANCELLED",
         ).length;
 
         const statusData: StatusDistribution[] = [
@@ -571,7 +571,7 @@ export default function DashboardPage() {
             returned: 0,
             delivery: 0,
             totalAmount: 0,
-          }
+          },
         );
         setLoading(false);
         return;
@@ -601,39 +601,39 @@ export default function DashboardPage() {
       // Calculate main statistics
       const totalOrders = filteredOrders.length;
       const placedOrders = filteredOrders.filter(
-        (o: any) => o.state === "PLACED"
+        (o: any) => o.state === "PLACED",
       ).length;
       const completedOrders = filteredOrders.filter(
-        (o: any) => o.state === "COMPLETED"
+        (o: any) => o.state === "COMPLETED",
       ).length;
       const deliveringOrders = filteredOrders.filter(
-        (o: any) => o.state === "DELIVERING"
+        (o: any) => o.state === "DELIVERING",
       ).length;
       const returnedOrders = filteredOrders.filter(
-        (o: any) => o.state === "RETURNED"
+        (o: any) => o.state === "RETURNED",
       ).length;
       const cancelledOrders = filteredOrders.filter(
-        (o: any) => o.state === "CANCELLED"
+        (o: any) => o.state === "CANCELLED",
       ).length;
 
       // Calculate revenue statistics
       // Total revenue with returns - sum of total price of ALL orders (including returned)
       const totalRevenueWithReturns = filteredOrders.reduce(
         (sum: number, order: any) => sum + (order.totalPrice || 0),
-        0
+        0,
       );
 
       // Total revenue (PP) - sum of total price of orders in Phnom Penh (excluding returned)
       const totalRevenuePP = filteredOrders
         .filter(
-          (o: any) => o.province === "Phnom Penh" && o.state !== "RETURNED"
+          (o: any) => o.province === "Phnom Penh" && o.state !== "RETURNED",
         )
         .reduce((sum: number, order: any) => sum + (order.totalPrice || 0), 0);
 
       // Total revenue (Province) - sum of total price of orders in Province (excluding returned)
       const totalRevenueProvince = filteredOrders
         .filter(
-          (o: any) => o.province !== "Phnom Penh" && o.state !== "RETURNED"
+          (o: any) => o.province !== "Phnom Penh" && o.state !== "RETURNED",
         )
         .reduce((sum: number, order: any) => sum + (order.totalPrice || 0), 0);
 
@@ -642,7 +642,7 @@ export default function DashboardPage() {
 
       // Get completed orders only
       const completedOrdersOnly = filteredOrders.filter(
-        (o: any) => o.state === "COMPLETED"
+        (o: any) => o.state === "COMPLETED",
       );
 
       // Total revenue (PP) (Completed) - sum of total price of completed orders in Phnom Penh
@@ -663,13 +663,13 @@ export default function DashboardPage() {
       // Customer delivery - sum of delivery price
       const customerDelivery = filteredOrders.reduce(
         (sum: number, order: any) => sum + (order.deliveryPrice || 0),
-        0
+        0,
       );
 
       // Company delivery - sum of company delivery price
       const companyDelivery = filteredOrders.reduce(
         (sum: number, order: any) => sum + (order.companyDeliveryPrice || 0),
-        0
+        0,
       );
 
       // Profit delivery - sum of delivery price - sum of company delivery price
@@ -678,13 +678,13 @@ export default function DashboardPage() {
       // Customer delivery (completed) - sum of delivery price of completed orders
       const customerDeliveryCompleted = completedOrdersOnly.reduce(
         (sum: number, order: any) => sum + (order.deliveryPrice || 0),
-        0
+        0,
       );
 
       // Company delivery (completed) - sum of company delivery price of completed orders
       const companyDeliveryCompleted = completedOrdersOnly.reduce(
         (sum: number, order: any) => sum + (order.companyDeliveryPrice || 0),
-        0
+        0,
       );
 
       // Profit delivery (completed) - sum of delivery price of completed orders - sum of company delivery price of completed orders
@@ -816,7 +816,7 @@ export default function DashboardPage() {
           if (item.optionDetails?.selections?.length > 0) {
             optionLabel = item.optionDetails.selections
               .map((sel: any) =>
-                sel.selectedOptions.map((o: any) => o.name).join(", ")
+                sel.selectedOptions.map((o: any) => o.name).join(", "),
               )
               .join(" / ");
           }
@@ -837,13 +837,13 @@ export default function DashboardPage() {
           const optionKey = optionLabel;
           productEntry.options.set(
             optionKey,
-            (productEntry.options.get(optionKey) || 0) + quantity
+            (productEntry.options.get(optionKey) || 0) + quantity,
           );
         });
       });
 
       const topProductsData = Array.from(productSalesMap.values()).sort(
-        (a, b) => b.totalQuantity - a.totalQuantity
+        (a, b) => b.totalQuantity - a.totalQuantity,
       );
 
       setTopProducts(topProductsData);
@@ -1079,7 +1079,7 @@ export default function DashboardPage() {
                             .split("T")[0];
                           dailyOrdersMap.set(
                             orderDate,
-                            (dailyOrdersMap.get(orderDate) || 0) + 1
+                            (dailyOrdersMap.get(orderDate) || 0) + 1,
                           );
                         });
 
@@ -1101,47 +1101,69 @@ export default function DashboardPage() {
 
                         // Calculate top products
                         const productSalesMap = new Map();
+
                         orders.forEach((order: any) => {
                           order.orderItems?.forEach((item: any) => {
+                            if (!item?.product?.id) return;
+
                             const productId = item.product.id;
                             const productName = item.product.name;
                             const quantity = item.quantity;
-                            if (productSalesMap.has(productId)) {
+
+                            let optionLabel = "No option";
+
+                            if (item.optionDetails?.selections?.length > 0) {
+                              optionLabel = item.optionDetails.selections
+                                .map((sel: any) =>
+                                  sel.selectedOptions
+                                    .map((o: any) => o.name)
+                                    .join(", "),
+                                )
+                                .join(" / ");
+                            }
+
+                            if (!productSalesMap.has(productId)) {
                               productSalesMap.set(productId, {
-                                ...productSalesMap.get(productId),
-                                quantity:
-                                  productSalesMap.get(productId).quantity +
-                                  quantity,
-                              });
-                            } else {
-                              productSalesMap.set(productId, {
-                                id: productId,
+                                productId,
                                 name: productName,
-                                quantity,
+                                totalQuantity: 0,
+                                options: new Map(),
                               });
                             }
+
+                            const productEntry = productSalesMap.get(productId);
+
+                            productEntry.totalQuantity += quantity;
+
+                            productEntry.options.set(
+                              optionLabel,
+                              (productEntry.options.get(optionLabel) || 0) +
+                                quantity,
+                            );
                           });
                         });
+
                         const topProductsData = Array.from(
-                          productSalesMap.values()
+                          productSalesMap.values(),
                         ).sort((a, b) => b.totalQuantity - a.totalQuantity);
+
                         setTopProducts(topProductsData);
 
                         // Calculate status distribution
                         const placedOrders = orders.filter(
-                          (o: any) => o.state === "PLACED"
+                          (o: any) => o.state === "PLACED",
                         ).length;
                         const deliveringOrders = orders.filter(
-                          (o: any) => o.state === "DELIVERING"
+                          (o: any) => o.state === "DELIVERING",
                         ).length;
                         const completedOrders = orders.filter(
-                          (o: any) => o.state === "COMPLETED"
+                          (o: any) => o.state === "COMPLETED",
                         ).length;
                         const returnedOrders = orders.filter(
-                          (o: any) => o.state === "RETURNED"
+                          (o: any) => o.state === "RETURNED",
                         ).length;
                         const cancelledOrders = orders.filter(
-                          (o: any) => o.state === "CANCELLED"
+                          (o: any) => o.state === "CANCELLED",
                         ).length;
                         const statusData: StatusDistribution[] = [
                           {
@@ -1661,7 +1683,7 @@ export default function DashboardPage() {
 
                     // Filter out "No option"
                     const filteredOptions = Array.from(
-                      options.entries()
+                      options.entries(),
                     ).filter((entry: any) => entry[0] !== "No option");
                     return (
                       <div
