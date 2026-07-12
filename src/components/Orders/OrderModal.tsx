@@ -19,6 +19,7 @@ interface OrderForm {
   driverId: string;
   deliveryPrice: number;
   companyDeliveryPrice: number;
+  secondCompanyDeliveryTotal: number;
   totalPrice: number;
   isPaid: boolean;
   products: Array<{
@@ -162,6 +163,7 @@ export default function OrderModal({
       customerLocation: isPickupOrder ? "Pickup" : "",
       province: isPickupOrder ? "Phnom Penh" : "",
       totalPrice: 0,
+      secondCompanyDeliveryTotal: 0,
       isPaid: false,
       products: [{ productId: "", quantity: 1, price: 0 }],
     },
@@ -210,6 +212,7 @@ export default function OrderModal({
             ? 0
             : Number(order.companyDeliveryPrice) || 1.2,
           totalPrice: Number(order.totalPrice) || 0,
+          secondCompanyDeliveryTotal: Number(order.secondCompanyDeliveryTotal) || 0,
           isPaid: !!order.isPaid,
           products: orderProducts,
         };
@@ -411,6 +414,7 @@ export default function OrderModal({
             totals.calculatedCompanyDeliveryPrice,
           );
         }
+        setValue("secondCompanyDeliveryTotal", totals.secondCompanyDeliveryTotal);
       }, 600); // Slightly longer delay than option restoration
 
       return () => clearTimeout(timer);
@@ -474,6 +478,7 @@ export default function OrderModal({
 
         setValue("companyDeliveryPrice", totals.calculatedCompanyDeliveryPrice);
       }
+      setValue("secondCompanyDeliveryTotal", totals.secondCompanyDeliveryTotal);
     }
   }, [
     watchedProvince,
@@ -493,6 +498,7 @@ export default function OrderModal({
       if (Math.abs(currentTotalPrice - totals.calculatedTotal) > 0.01) {
         setValue("totalPrice", totals.calculatedTotal);
       }
+      setValue("secondCompanyDeliveryTotal", totals.secondCompanyDeliveryTotal);
     }
   }, [
     JSON.stringify(watchedProducts),
@@ -878,6 +884,12 @@ export default function OrderModal({
       return sum + (product?.weight || 0) * item.quantity;
     }, 0);
 
+    // Calculate second company delivery total
+    const secondCompanyDeliveryTotal = watchedProducts.reduce((sum, item) => {
+      const product = products.find((p) => p.id === item.productId);
+      return sum + (product?.secondCompanyDeliveryKhr || 0) * item.quantity;
+    }, 0);
+
     // Calculate company delivery price based on province and weight
     let calculatedCompanyDeliveryPrice = 0;
     const province = formValues.province;
@@ -923,6 +935,7 @@ export default function OrderModal({
       deliveryPrice,
       totalPrice,
       calculatedTotal,
+      secondCompanyDeliveryTotal,
     };
   };
 
@@ -942,6 +955,7 @@ export default function OrderModal({
         companyDeliveryPrice:
           data.companyDeliveryPrice || totals.companyDeliveryPrice,
         deliveryPrice: data.deliveryPrice || 0.0,
+        secondCompanyDeliveryTotal: data.secondCompanyDeliveryTotal || 0,
         totalPrice: data.totalPrice || totals.totalPrice,
         isPaid: !!data.isPaid,
         driverId: data.driverId || null,
@@ -1709,6 +1723,22 @@ export default function OrderModal({
                         </p>
                       </div>
                     )} */}
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        2nd Company Delivery (KHR)
+                      </label>
+                      <input
+                        {...register("secondCompanyDeliveryTotal")}
+                        type="number"
+                        step="1"
+                        className="input-field mt-1"
+                        placeholder="0"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Auto-summed for Phnom Penh orders
+                      </p>
+                    </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700">

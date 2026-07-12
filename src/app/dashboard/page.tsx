@@ -54,6 +54,7 @@ interface DashboardStats {
   customerDeliveryCompleted: number;
   companyDeliveryCompleted: number;
   profitDeliveryCompleted: number;
+  secondCompanyDeliveryTotal: number;
 }
 
 interface DriverStats {
@@ -100,6 +101,7 @@ export default function DashboardPage() {
     customerDeliveryCompleted: 0,
     companyDeliveryCompleted: 0,
     profitDeliveryCompleted: 0,
+    secondCompanyDeliveryTotal: 0,
   });
 
   const [driverStats, setDriverStats] = useState<DriverStats[]>([]);
@@ -691,6 +693,12 @@ export default function DashboardPage() {
       const profitDeliveryCompleted =
         customerDeliveryCompleted - companyDeliveryCompleted;
 
+      // Second company delivery total - sum of secondCompanyDeliveryTotal from Phnom Penh orders
+      const secondCompanyDeliveryTotal = filteredOrders.reduce(
+        (sum: number, order: any) => sum + (order.secondCompanyDeliveryTotal || 0),
+        0,
+      );
+
       setStats({
         totalOrders,
         placedOrders,
@@ -711,6 +719,7 @@ export default function DashboardPage() {
         customerDeliveryCompleted,
         companyDeliveryCompleted,
         profitDeliveryCompleted,
+        secondCompanyDeliveryTotal,
       });
 
       // Calculate driver statistics
@@ -901,6 +910,7 @@ export default function DashboardPage() {
           customerDeliveryCompleted,
           companyDeliveryCompleted,
           profitDeliveryCompleted,
+          secondCompanyDeliveryTotal,
         },
         driverStats: Array.from(driverStatsMap.values()),
         unassignedStats: {
@@ -1420,6 +1430,31 @@ export default function DashboardPage() {
                   value={formatCurrency(stats.profitDelivery)}
                   icon={TrendingUp}
                   variant="success"
+                />
+              </div>
+            </div>
+
+            {/* Second Company Delivery */}
+            <div className="mb-8">
+              <div className="flex items-center space-x-4 mb-6">
+                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-700 rounded-2xl flex items-center justify-center flex-shrink-0">
+                  <Package className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    2nd Company Delivery
+                  </h2>
+                  <p className="text-gray-600 text-sm">
+                    Total 2nd company delivery fees for Phnom Penh orders
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-1 gap-4 lg:gap-6">
+                <StatCard
+                  title="2nd Company Delivery Total (KHR)"
+                  value={(stats.secondCompanyDeliveryTotal || 0).toLocaleString()}
+                  icon={Package}
+                  variant="primary"
                 />
               </div>
             </div>

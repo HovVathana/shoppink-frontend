@@ -75,7 +75,7 @@ export default function CommentsPage() {
   const [pagination, setPagination] = useState<PaginationData>({
     total: 0,
     page: 1,
-    limit: 10,
+    limit: 5,
     pages: 0,
   });
   const [updating, setUpdating] = useState<string | null>(null);
@@ -124,9 +124,7 @@ export default function CommentsPage() {
     if (isAuthenticated) {
       fetchComments(1, statusFilter);
     }
-    // Remove isAuthenticated and statusFilter from dependencies to avoid double fetch
-    // The function will still work correctly
-  }, []);
+  }, [isAuthenticated]);
 
   const handleStatusChange = async (commentId: string, newStatus: "CONFIRMED" | "DENIED") => {
     try {
@@ -231,7 +229,7 @@ export default function CommentsPage() {
               {["ALL", "PENDING", "CONFIRMED", "DENIED"].map((status) => (
                 <button
                   key={status}
-                  onClick={() => setStatusFilter(status)}
+                  onClick={() => { setStatusFilter(status); fetchComments(1, status); }}
                   className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                     statusFilter === status
                       ? "bg-blue-600 text-white"
@@ -500,34 +498,32 @@ export default function CommentsPage() {
               )}
 
               {/* Pagination */}
-              {pagination.pages > 1 && (
-                <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                  <div className="text-sm text-gray-600">
-                    Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
-                    {Math.min(pagination.page * pagination.limit, pagination.total)} of{" "}
-                    {pagination.total} comments
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => fetchComments(pagination.page - 1, statusFilter)}
-                      disabled={pagination.page === 1 || loading}
-                      className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      <ChevronLeft className="h-5 w-5" />
-                    </button>
-                    <span className="text-sm text-gray-600">
-                      Page {pagination.page} of {pagination.pages}
-                    </span>
-                    <button
-                      onClick={() => fetchComments(pagination.page + 1, statusFilter)}
-                      disabled={pagination.page === pagination.pages || loading}
-                      className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      <ChevronRight className="h-5 w-5" />
-                    </button>
-                  </div>
+              <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                <div className="text-sm text-gray-600">
+                  {pagination.total > 0
+                    ? `Showing ${(pagination.page - 1) * pagination.limit + 1} to ${Math.min(pagination.page * pagination.limit, pagination.total)} of ${pagination.total} comments`
+                    : "No comments"}
                 </div>
-              )}
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => fetchComments(pagination.page - 1, statusFilter)}
+                    disabled={pagination.page <= 1 || loading}
+                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <span className="text-sm text-gray-600">
+                    Page {pagination.pages > 0 ? pagination.page : 0} of {pagination.pages}
+                  </span>
+                  <button
+                    onClick={() => fetchComments(pagination.page + 1, statusFilter)}
+                    disabled={pagination.page >= pagination.pages || loading}
+                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

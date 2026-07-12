@@ -52,6 +52,7 @@ export interface OrderDetailInfo {
   companyDeliveryPrice: number;
   deliveryPrice: number;
   totalPrice: number;
+  secondCompanyDeliveryTotal?: number;
   isPaid: boolean;
   orderAt: string;
   assignedAt?: string;
@@ -227,8 +228,13 @@ export default function OrderDetailModal({
 
             {/* Totals */}
             <div className="px-5 mt-4">
-              <div className="flex flex-col items-end gap-1">
-                <div className="min-w-[160px] border-2 border-black rounded p-2 space-y-1">
+              <div className="flex items-center justify-between gap-2">
+                {order.province === "Phnom Penh" && order.secondCompanyDeliveryTotal && (
+                  <div className="text-lg font-bold">
+                    {Math.floor(order.secondCompanyDeliveryTotal / 1000)}
+                  </div>
+                )}
+                <div className="min-w-[160px] border-2 border-black rounded p-2 space-y-1 ml-auto">
                   <div className="flex items-center justify-between text-sm">
                     <span className=" font-medium">សម្គាល់បង់ប្រាក់</span>
                     <span

@@ -51,6 +51,7 @@ interface Order {
   companyDeliveryPrice: number;
   totalPrice: number;
   isPaid: boolean;
+  secondCompanyDeliveryTotal?: number;
   isPrinted: boolean;
   remark?: string;
   driverId?: string;
@@ -1633,6 +1634,9 @@ export default function OrdersPage() {
                             </div>
                             <div className="text-xs text-gray-500">
                               Delivery: ${order.deliveryPrice.toFixed(2)}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              2nd Delivery: {(order.secondCompanyDeliveryTotal || 0).toLocaleString()} KHR
                             </div>
                             <div className="mt-1">
                               <span

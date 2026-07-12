@@ -55,6 +55,8 @@ interface Product {
   originalPrice?: number;
   hasOptions?: boolean;
   optionGroups?: ProductOptionGroup[];
+  secondCompanyDeliveryUsd?: number;
+  secondCompanyDeliveryKhr?: number;
 }
 
 interface ProductForm {
@@ -73,6 +75,8 @@ interface ProductForm {
   bannerColor: string;
   bannerType: string;
   originalPrice?: number;
+  secondCompanyDeliveryUsd: number;
+  secondCompanyDeliveryKhr: number;
 }
 
 interface ProductModalProps {
@@ -133,6 +137,8 @@ export default function ProductModal({
           bannerColor: product.bannerColor || "blue",
           bannerType: product.bannerType || "info",
           originalPrice: product.originalPrice || undefined,
+          secondCompanyDeliveryUsd: product.secondCompanyDeliveryUsd || 0,
+          secondCompanyDeliveryKhr: product.secondCompanyDeliveryKhr || 0,
         });
         // Reset image state for editing
         setSelectedImageFile(null);
@@ -156,6 +162,8 @@ export default function ProductModal({
           bannerColor: "blue",
           bannerType: "info",
           originalPrice: undefined,
+          secondCompanyDeliveryUsd: 0,
+          secondCompanyDeliveryKhr: 0,
         });
         // Reset image state for new product
         setSelectedImageFile(null);
@@ -507,6 +515,46 @@ export default function ProductModal({
                     {errors.delivery_price_for_province && (
                       <p className="mt-1 text-sm text-red-600">
                         {errors.delivery_price_for_province.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      2nd Company Delivery (USD)
+                    </label>
+                    <input
+                      {...register("secondCompanyDeliveryUsd", {
+                        min: { value: 0, message: "Must be non-negative" },
+                      })}
+                      type="number"
+                      step="0.01"
+                      className="input-field mt-1"
+                      placeholder="0.00"
+                    />
+                    {errors.secondCompanyDeliveryUsd && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.secondCompanyDeliveryUsd.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      2nd Company Delivery (KHR)
+                    </label>
+                    <input
+                      {...register("secondCompanyDeliveryKhr", {
+                        min: { value: 0, message: "Must be non-negative" },
+                      })}
+                      type="number"
+                      step="1"
+                      className="input-field mt-1"
+                      placeholder="0"
+                    />
+                    {errors.secondCompanyDeliveryKhr && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.secondCompanyDeliveryKhr.message}
                       </p>
                     )}
                   </div>

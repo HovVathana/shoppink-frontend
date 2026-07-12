@@ -61,6 +61,8 @@ interface Product {
   updatedAt: string;
   hasOptions?: boolean;
   optionGroups?: ProductOptionGroup[];
+  secondCompanyDeliveryUsd?: number;
+  secondCompanyDeliveryKhr?: number;
 }
 
 // Component for displaying hierarchical stock tree in product table
@@ -546,6 +548,9 @@ export default function ProductsPage() {
                         Delivery (PP/Province)
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        2nd Delivery
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                         Status
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -618,6 +623,9 @@ export default function ProductsPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           ${product.delivery_price_for_pp.toFixed(2)} / $
                           {product.delivery_price_for_province.toFixed(2)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          ${(product.secondCompanyDeliveryUsd || 0).toFixed(2)} / {(product.secondCompanyDeliveryKhr || 0).toLocaleString()} KHR
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {getStatusBadge(product)}

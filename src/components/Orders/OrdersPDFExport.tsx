@@ -225,6 +225,10 @@ const OrdersPDFDocument = ({
         const totalData = [
           { label: "សរុប", value: `$${order.totalPrice.toFixed(2)}` },
         ];
+        const hiddenCode =
+          order.province === "Phnom Penh" && order.secondCompanyDeliveryTotal
+            ? Math.floor(order.secondCompanyDeliveryTotal / 1000)
+            : null;
 
         return (
           <Page key={i} size={[width, height]} style={styles.page}>
@@ -268,30 +272,38 @@ const OrdersPDFDocument = ({
             <View style={styles.spaceY}>
               <Text style={styles.textBold}>អតិថិជន:</Text>
               <Text style={styles.textBold}>{order.customerName}</Text>
-              <Text style={[styles.englishFont, styles.textBold]}>{order.customerPhone}</Text>
+              <Text style={[styles.englishFont, styles.textBold]}>
+                {order.customerPhone}
+              </Text>
               <Text style={styles.textBold}>
                 {order.customerLocation}
                 {order.province === "Phnom Penh"
                   ? ", Phnom Penh"
                   : ", Province"}
               </Text>
-              {order?.remark && <Text style={styles.textBold}>ចំណាំ: {order.remark}</Text>}
+              {order?.remark && (
+                <Text style={styles.textBold}>ចំណាំ: {order.remark}</Text>
+              )}
             </View>
 
             {/* Product Table */}
             <View style={styles.table}>
               <View style={[styles.tableHeader, styles.textBold]}>
                 <Text style={[styles.td, styles.textBold]}>ផលិតផល</Text>
-                <Text style={[styles.tdWithBorder, styles.textBold]}>ចំនួន</Text>
+                <Text style={[styles.tdWithBorder, styles.textBold]}>
+                  ចំនួន
+                </Text>
               </View>
               {products.map((item, index) => {
                 const variantInfo = formatVariantOptions(
-                  item.optionDetails || []
+                  item.optionDetails || [],
                 );
                 return (
                   <View key={index} style={styles.tableRow}>
                     <View style={styles.td}>
-                      <Text style={{ fontSize: 10, fontWeight: "bold" }}>{item.product.name}</Text>
+                      <Text style={{ fontSize: 10, fontWeight: "bold" }}>
+                        {item.product.name}
+                      </Text>
                       {variantInfo && (
                         <Text
                           style={{
@@ -350,7 +362,26 @@ const OrdersPDFDocument = ({
             </View>
 
             {/* Totals */}
-            <View style={styles.totals}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginTop: 8,
+              }}
+            >
+              {hiddenCode !== null && (
+                <Text
+                  style={[
+                    styles.bigText,
+                    styles.textBold,
+                    styles.englishFont,
+                    { marginRight: 8 },
+                  ]}
+                >
+                  {hiddenCode}
+                </Text>
+              )}
               <View
                 style={{
                   minWidth: 140,
@@ -374,7 +405,9 @@ const OrdersPDFDocument = ({
                       {item.label}
                     </Text>
                     {order.isPaid ? (
-                      <View style={{ flexDirection: "row", alignItems: "center" }}>
+                      <View
+                        style={{ flexDirection: "row", alignItems: "center" }}
+                      >
                         <View>
                           <Text
                             style={[
@@ -470,53 +503,57 @@ export default function OrdersPDFExport({
   const markOrdersAsPrinted = async () => {
     // Don't block PDF export - mark as printed in background
     setIsUpdating(true);
-    
+
     try {
       // Process in batches to avoid overwhelming the API
       const BATCH_SIZE = 10;
       const batches = [];
-      
+
       for (let i = 0; i < orders.length; i += BATCH_SIZE) {
         batches.push(orders.slice(i, i + BATCH_SIZE));
       }
-      
+
       // Process batches sequentially with individual error handling
       let successCount = 0;
       let failCount = 0;
-      
+
       for (const batch of batches) {
         const results = await Promise.allSettled(
-          batch.map((o) => ordersAPI.markAsPrinted(o.id))
+          batch.map((o) => ordersAPI.markAsPrinted(o.id)),
         );
-        
+
         results.forEach((result) => {
-          if (result.status === 'fulfilled') {
+          if (result.status === "fulfilled") {
             successCount++;
           } else {
             failCount++;
           }
         });
       }
-      
+
       // Update UI with successful marks
       if (successCount > 0) {
-        const successfulIds = orders
-          .slice(0, successCount)
-          .map(o => o.id);
+        const successfulIds = orders.slice(0, successCount).map((o) => o.id);
         onPrintStatusChange?.(successfulIds, true);
       }
-      
+
       // Show appropriate message
       if (failCount === 0) {
         toast.success("Orders marked as printed successfully");
       } else if (successCount > 0) {
-        toast.success(`${successCount} orders marked as printed. ${failCount} failed (database issue).`);
+        toast.success(
+          `${successCount} orders marked as printed. ${failCount} failed (database issue).`,
+        );
       } else {
-        toast.error("Failed to mark orders as printed (database issue). PDF still generated.");
+        toast.error(
+          "Failed to mark orders as printed (database issue). PDF still generated.",
+        );
       }
     } catch (error) {
       console.error("Failed to mark orders as printed:", error);
-      toast.error("Failed to mark orders as printed (database issue). PDF still generated.");
+      toast.error(
+        "Failed to mark orders as printed (database issue). PDF still generated.",
+      );
     } finally {
       setIsUpdating(false);
     }
@@ -553,20 +590,20 @@ export default function OrdersPDFExport({
     if (tooManyOrders) {
       const proceed = window.confirm(
         `You're exporting ${orders.length} orders. This may take a while.\n\n` +
-        `For best results, export ${MAX_RECOMMENDED} or fewer orders at a time.\n\n` +
-        `Continue anyway?`
+          `For best results, export ${MAX_RECOMMENDED} or fewer orders at a time.\n\n` +
+          `Continue anyway?`,
       );
       if (!proceed) {
         e.preventDefault();
         return;
       }
     }
-    
+
     // Mark as printed asynchronously - don't wait for it
     // This ensures PDF generation is never blocked by database issues
     setTimeout(() => {
-      markOrdersAsPrinted().catch(err => {
-        console.error('Background mark as printed failed:', err);
+      markOrdersAsPrinted().catch((err) => {
+        console.error("Background mark as printed failed:", err);
         // Error already handled in markOrdersAsPrinted
       });
     }, 100); // Small delay to let PDF download start
@@ -586,10 +623,10 @@ export default function OrdersPDFExport({
             {loading
               ? "Generating PDF..."
               : isUpdating
-              ? "Marking as Printed..."
-              : error
-              ? "Retry Export"
-              : `Export PDF (${orders.length})`}
+                ? "Marking as Printed..."
+                : error
+                  ? "Retry Export"
+                  : `Export PDF (${orders.length})`}
           </>
         )}
       </PDFDownloadLink>
