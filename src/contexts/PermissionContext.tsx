@@ -18,6 +18,7 @@ interface PermissionContextType {
   canCreateOrders: () => boolean;
   canEditOrders: () => boolean;
   canDeleteOrders: () => boolean;
+  canExchangeOrders: () => boolean;
   canViewCategories: () => boolean;
   canCreateCategories: () => boolean;
   canEditCategories: () => boolean;
@@ -96,6 +97,7 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
   const canCreateOrders = () => hasPermission("create_orders");
   const canEditOrders = () => hasPermission("edit_orders");
   const canDeleteOrders = () => hasPermission("delete_orders");
+  const canExchangeOrders = () => hasPermission("exchange_orders");
 
   // Category permissions
   const canViewCategories = () => hasPermission("view_categories");
@@ -130,6 +132,7 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
     canCreateOrders,
     canEditOrders,
     canDeleteOrders,
+    canExchangeOrders,
     canViewCategories,
     canCreateCategories,
     canEditCategories,

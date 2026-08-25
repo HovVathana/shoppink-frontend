@@ -34,6 +34,8 @@ import {
   X,
   ChevronDown,
   MessageCircle,
+  Repeat,
+  BadgeCheck,
 } from "lucide-react";
 
 interface Order {
@@ -126,6 +128,18 @@ const ORDER_STATES = [
     icon: X,
     color: "text-gray-600 bg-gray-100",
   },
+  {
+    value: "EXCHANGE",
+    label: "Exchange",
+    icon: Repeat,
+    color: "text-purple-600 bg-purple-100",
+  },
+  {
+    value: "COMPLETE_EXCHANGE",
+    label: "Complete Exchange",
+    icon: BadgeCheck,
+    color: "text-teal-600 bg-teal-100",
+  },
 ];
 
 export default function OrdersPage() {
@@ -144,7 +158,7 @@ export default function OrdersPage() {
   const [quickFunctionResult, setQuickFunctionResult] = useState<any>(null);
 
   const { isAuthenticated, loading: authLoading } = useAuth();
-  const { canEditOrders } = usePermissions();
+  const { canEditOrders, canExchangeOrders } = usePermissions();
   const { blacklistSet, normalizePhone } = useBlacklist();
   const { drivers, activeDrivers } = useDrivers();
   const { ordersPageState, updateOrdersPageState } = usePageState();
@@ -155,6 +169,7 @@ export default function OrdersPage() {
   const selectedState = ordersPageState.selectedState;
   const selectedProvince = ordersPageState.selectedProvince;
   const selectedDriver = ordersPageState.selectedDriver;
+  const selectedPaidStatus = ordersPageState.selectedPaidStatus;
   const sortField = ordersPageState.sortField;
   const sortDirection = ordersPageState.sortDirection;
   const currentPage = ordersPageState.currentPage;
@@ -358,16 +373,22 @@ export default function OrdersPage() {
   // Quick function: Find orders by status
   const findOrdersByStatus = () => {
     const status = prompt(
-      "Enter status (PLACED, DELIVERING, COMPLETED, RETURNED, CANCELLED):",
+      "Enter status (PLACED, DELIVERING, COMPLETED, RETURNED, CANCELLED, EXCHANGE, COMPLETE_EXCHANGE):",
     )?.toUpperCase();
     if (
       !status ||
-      !["PLACED", "DELIVERING", "COMPLETED", "RETURNED", "CANCELLED"].includes(
-        status,
-      )
+      ![
+        "PLACED",
+        "DELIVERING",
+        "COMPLETED",
+        "RETURNED",
+        "CANCELLED",
+        "EXCHANGE",
+        "COMPLETE_EXCHANGE",
+      ].includes(status)
     ) {
       toast.error(
-        "Invalid status. Use: PLACED, DELIVERING, COMPLETED, RETURNED, or CANCELLED",
+        "Invalid status. Use: PLACED, DELIVERING, COMPLETED, RETURNED, CANCELLED, EXCHANGE, COMPLETE_EXCHANGE",
       );
       return;
     }
@@ -447,13 +468,24 @@ export default function OrdersPage() {
           order.customerLocation
             .toLowerCase()
             .includes(searchTerm.toLowerCase()) ||
-          order.province.toLowerCase().includes(searchTerm.toLowerCase()),
+          order.province.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (order.remark || "")
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()),
       );
     }
 
     // Filter by state
     if (selectedState) {
       filtered = filtered.filter((order) => order.state === selectedState);
+    }
+
+    // Filter by payment status
+    if (selectedPaidStatus) {
+      filtered = filtered.filter(
+        (order) =>
+          order.isPaid === (selectedPaidStatus === "paid"),
+      );
     }
 
     // Filter by province
@@ -505,6 +537,7 @@ export default function OrdersPage() {
     selectedState,
     selectedProvince,
     selectedDriver,
+    selectedPaidStatus,
     sortField,
     sortDirection,
     dateFrom,
@@ -1170,6 +1203,22 @@ export default function OrdersPage() {
                   </select>
                 </div>
 
+                <div className="mb-3">
+                  <select
+                    value={selectedPaidStatus}
+                    onChange={(e) =>
+                      updateOrdersPageState({
+                        selectedPaidStatus: e.target.value,
+                      })
+                    }
+                    className="menubox-input text-sm w-full"
+                  >
+                    <option value="">All Payment Status</option>
+                    <option value="paid">Paid</option>
+                    <option value="unpaid">Unpaid</option>
+                  </select>
+                </div>
+
                 <div className="grid grid-cols-2 gap-2">
                   <input
                     type="date"
@@ -1279,8 +1328,26 @@ export default function OrdersPage() {
                   </div>
                 </div>
 
-                {/* Date Range - Desktop */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                {/* Payment Status + Date Range - Desktop */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Payment Status
+                    </label>
+                    <select
+                      value={selectedPaidStatus}
+                      onChange={(e) =>
+                        updateOrdersPageState({
+                          selectedPaidStatus: e.target.value,
+                        })
+                      }
+                      className="menubox-input w-full"
+                    >
+                      <option value="">All Payment Status</option>
+                      <option value="paid">Paid</option>
+                      <option value="unpaid">Unpaid</option>
+                    </select>
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       From Date
@@ -1660,11 +1727,23 @@ export default function OrdersPage() {
                               }
                               className={`table-dropdown text-xs font-medium px-2 py-1 border-0 ${stateInfo.color}`}
                             >
-                              {ORDER_STATES.map((state) => (
-                                <option key={state.value} value={state.value}>
-                                  {state.label}
-                                </option>
-                              ))}
+                              {ORDER_STATES.map((state) => {
+                                if (
+                                  (state.value === "EXCHANGE" ||
+                                    state.value === "COMPLETE_EXCHANGE") &&
+                                  !canExchangeOrders()
+                                ) {
+                                  return null;
+                                }
+                                return (
+                                  <option
+                                    key={state.value}
+                                    value={state.value}
+                                  >
+                                    {state.label}
+                                  </option>
+                                );
+                              })}
                             </select>
                           </td>
 

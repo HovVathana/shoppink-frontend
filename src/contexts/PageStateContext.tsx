@@ -14,6 +14,7 @@ interface PageState {
   selectedState: string;
   selectedProvince: string;
   selectedDriver: string;
+  selectedPaidStatus: string;
   sortField: string;
   sortDirection: "asc" | "desc";
   dateFrom: string;
@@ -38,6 +39,7 @@ const defaultPageState: PageState = {
   selectedState: "",
   selectedProvince: "",
   selectedDriver: "",
+  selectedPaidStatus: "",
   sortField: "orderAt",
   sortDirection: "desc",
   dateFrom: new Date().toISOString().split("T")[0],

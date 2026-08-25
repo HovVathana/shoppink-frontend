@@ -91,6 +91,11 @@ const AVAILABLE_PERMISSIONS: Permission[] = [
     name: "Delete Orders",
     description: "Cancel or remove orders",
   },
+  {
+    id: "exchange_orders",
+    name: "Exchange Orders",
+    description: "Move orders to Exchange / Complete Exchange states",
+  },
   // Categories
   {
     id: "view_categories",
