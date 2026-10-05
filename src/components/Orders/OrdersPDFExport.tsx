@@ -15,7 +15,7 @@ import { Download, AlertTriangle } from "lucide-react";
 import { ordersAPI } from "@/lib/api";
 import toast from "react-hot-toast";
 
-// Register custom fonts (put .ttf files in /public/fonts/)
+// Register custom fonts served from /public.
 Font.register({
   family: "Bayon",
   src: "/Bayon.ttf",
@@ -25,6 +25,36 @@ Font.register({
   family: "DMSans",
   src: "/DMSans.ttf",
 });
+
+Font.register({
+  family: "NotoSansSC",
+  src: "/NotoSansSC-Regular.otf",
+  fontWeight: 700,
+});
+
+const CJK_RUN_PATTERN =
+  /([\p{Script=Han}\u3000-\u303f\uff00-\uffef]+)/gu;
+const HAS_CJK_PATTERN = /[\p{Script=Han}\u3000-\u303f\uff00-\uffef]/u;
+
+// React PDF does not automatically fall back to another font for missing
+// glyphs. Keep the existing Khmer/Latin fonts and switch only CJK runs to a
+// bundled font that contains Chinese glyphs.
+const renderMultilingualText = (value: string | number) =>
+  String(value)
+    .split(CJK_RUN_PATTERN)
+    .filter(Boolean)
+    .map((run, index) =>
+      HAS_CJK_PATTERN.test(run) ? (
+        <Text
+          key={`${index}-${run}`}
+          style={{ fontFamily: "NotoSansSC", fontWeight: 700 }}
+        >
+          {run}
+        </Text>
+      ) : (
+        run
+      ),
+    );
 
 const styles = StyleSheet.create({
   page: {
@@ -243,7 +273,7 @@ const OrdersPDFDocument = ({
                 <Text style={styles.subtitle}>
                   បញ្ជាដោយ:{" "}
                   <Text style={styles.englishFont}>
-                    {order.creator?.name || "N/A"}
+                    {renderMultilingualText(order.creator?.name || "N/A")}
                   </Text>
                 </Text>
               </View>
@@ -271,18 +301,25 @@ const OrdersPDFDocument = ({
             {/* Customer Info */}
             <View style={styles.spaceY}>
               <Text style={styles.textBold}>អតិថិជន:</Text>
-              <Text style={styles.textBold}>{order.customerName}</Text>
+              <Text style={styles.textBold}>
+                {renderMultilingualText(order.customerName)}
+              </Text>
               <Text style={[styles.englishFont, styles.textBold]}>
                 {order.customerPhone}
               </Text>
               <Text style={styles.textBold}>
-                {order.customerLocation}
-                {order.province === "Phnom Penh"
-                  ? ", Phnom Penh"
-                  : ", Province"}
+                {renderMultilingualText(
+                  `${order.customerLocation}${
+                    order.province === "Phnom Penh"
+                      ? ", Phnom Penh"
+                      : ", Province"
+                  }`,
+                )}
               </Text>
               {order?.remark && (
-                <Text style={styles.textBold}>ចំណាំ: {order.remark}</Text>
+                <Text style={styles.textBold}>
+                  ចំណាំ: {renderMultilingualText(order.remark)}
+                </Text>
               )}
             </View>
 
@@ -302,7 +339,7 @@ const OrdersPDFDocument = ({
                   <View key={index} style={styles.tableRow}>
                     <View style={styles.td}>
                       <Text style={{ fontSize: 10, fontWeight: "bold" }}>
-                        {item.product.name}
+                        {renderMultilingualText(item.product.name)}
                       </Text>
                       {variantInfo && (
                         <Text
@@ -313,7 +350,7 @@ const OrdersPDFDocument = ({
                             marginTop: 2,
                           }}
                         >
-                          {variantInfo}
+                          {renderMultilingualText(variantInfo)}
                         </Text>
                       )}
                     </View>
